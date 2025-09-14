@@ -13,9 +13,9 @@ public class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File("config/modhm/config.json");
 
-    public static int ROCKSMASH_RESPAWN = 120;
+    public static int ROCKSMASH_RESPAWN = 60;
     public static int CUT_RESPAWN = 60;
-    public static int STRENGTH_RESPAWN = 180;
+    public static int STRENGTH_RESPAWN = 60;
 
     public static void load() {
         try {
