@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "cobblemon_fabric_mdk",
+  "version": "${version}",
+  "name": "Cobblemon Fabric MDK",
+  "description": "A MDK useful for Fabric Development",
+  "authors": [
+    "The Cobblemon Team"
+  ],
+  "license": "MIT License",
+  "icon": "assets/modhm/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.cobblemon.khataly.modhm.HMMod"
+    ],
+    "client": [
+      "com.cobblemon.khataly.modhm.HMModClient"
+    ]
+  },
+  "depends": {
+    "minecraft": "1.21.1",
+    "cobblemon": ">=1.6.0"
+  }
+}

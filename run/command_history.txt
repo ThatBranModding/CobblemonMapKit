@@ -1,0 +1,4 @@
+/teach @p 1 rocksmash
+/teach @p 1 cut
+/teach @p 1 rocksmash
+/teach @p 1 strength
