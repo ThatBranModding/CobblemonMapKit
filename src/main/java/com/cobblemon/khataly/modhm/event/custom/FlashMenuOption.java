@@ -1,6 +1,7 @@
 package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
+import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.packet.FlashMenuC2SPacket;
 import com.cobblemon.khataly.modhm.networking.packet.FlashMenuS2CPacket;
 import com.cobblemon.mod.common.api.Priority;
@@ -67,8 +68,43 @@ public class FlashMenuOption {
             kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
             kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
                 MinecraftClient mc = MinecraftClient.getInstance();
-                //mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("Flash Menu"))));
-                System.out.println("[FlashMenuOption] Opzione Flash premuta!");
+                mc.execute(() -> {
+                    if (mc.player != null) {
+
+                        // 🔹 Controlla se Night Vision è già attivo
+                        if (mc.player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION)) {
+                            mc.player.sendMessage(Text.literal("❗ Flash is already active!"), false);
+                            return; // esci senza applicare di nuovo l'effetto
+                        }
+
+                        int durationSeconds = ModConfig.FLASH_DURATION;
+                        int durationTicks = durationSeconds * 20;
+
+                        // Applica Night Vision
+                        mc.player.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+                                net.minecraft.entity.effect.StatusEffects.NIGHT_VISION,
+                                durationTicks,
+                                0,
+                                false,
+                                false
+                        ));
+
+                        System.out.println("[FlashMenuOption] Night Vision applicato per " + durationSeconds + " secondi!");
+
+                        // Rimozione programmata usando un thread separato
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(durationSeconds * 1000L);
+                            } catch (InterruptedException ignored) {}
+                            mc.execute(() -> {
+                                if (mc.player != null && mc.player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION)) {
+                                    mc.player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION);
+                                    System.out.println("[FlashMenuOption] Night Vision terminato!");
+                                }
+                            });
+                        }).start();
+                    }
+                });
                 return Unit.INSTANCE;
             };
 

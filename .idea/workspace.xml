@@ -4,16 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b39f538f-0004-4040-97e6-a9eeeda397bf" name="Changes" comment="aggiunti custom sounds e cambiato qualche maiuscola">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/custom/FlashMenuOption.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/networking/packet/FlashMenuC2SPacket.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/networking/packet/FlashMenuS2CPacket.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/modhm/textures/gui/flash/icon_flash.png" afterDir="false" />
+    <list default="true" id="b39f538f-0004-4040-97e6-a9eeeda397bf" name="Changes" comment="diminuita box collisioni blocchi e aggiunto icona flash">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/.architectury-transformer/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/.architectury-transformer/debug.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/command_history.txt" beforeDir="false" afterPath="$PROJECT_DIR$/run/command_history.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/config/cobblemon/main.json" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/cobblemon/main.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/config/fabric/indigo-renderer.properties" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/fabric/indigo-renderer.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/config/modhm/config.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/debug-1.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-1.log.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/debug-2.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-2.log.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/debug-3.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-3.log.gz" afterDir="false" />
@@ -21,9 +18,11 @@
       <change beforePath="$PROJECT_DIR$/run/logs/debug-5.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-5.log.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/latest.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/latest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/options.txt" beforeDir="false" afterPath="$PROJECT_DIR$/run/options.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/DIM-1/data/raids.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/DIM-1/data/raids.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/DIM1/data/raids_end.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/DIM1/data/raids_end.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/data/raids.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/data/raids.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/saves/New World/data/random_sequences.dat" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/data/random_sequences.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/entities/r.-1.-1.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/entities/r.-1.-1.mca" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/entities/r.-1.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/entities/r.-1.0.mca" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/entities/r.0.-1.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/entities/r.0.-1.mca" afterDir="false" />
@@ -36,17 +35,8 @@
       <change beforePath="$PROJECT_DIR$/run/saves/New World/region/r.0.0.mca" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/region/r.0.0.mca" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/saves/New World/session.lock" beforeDir="false" afterPath="$PROJECT_DIR$/run/saves/New World/session.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/usercache.json" beforeDir="false" afterPath="$PROJECT_DIR$/run/usercache.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/HMModClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/HMModClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/BreakableRockEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/BreakableRockEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/CuttableTreeEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/CuttableTreeEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/MovableRockEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/block/entity/custom/MovableRockEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/ModEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/ModEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/custom/FlyMenuOption.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/custom/FlyMenuOption.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/networking/ModNetworking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/networking/ModNetworking.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/util/PartyUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/util/PartyUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/modhm/textures/gui/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/modhm/textures/gui/icon_fly.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/modhm/textures/gui/fly/icon_fly.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/modhm/textures/gui/slot_highlight.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/config/ModConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/config/ModConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/custom/FlashMenuOption.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/modhm/event/custom/FlashMenuOption.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -163,11 +153,20 @@
       <option name="project" value="LOCAL" />
       <updated>1757861850560</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="diminuita box collisioni blocchi e aggiunto icona flash">
+      <option name="closed" value="true" />
+      <created>1758054893119</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1758054893119</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="di base respawnano tutti dopo 1 minuto" />
-    <option name="LAST_COMMIT_MESSAGE" value="di base respawnano tutti dopo 1 minuto" />
+    <MESSAGE value="diminuita box collisioni blocchi e aggiunto icona flash" />
+    <option name="LAST_COMMIT_MESSAGE" value="diminuita box collisioni blocchi e aggiunto icona flash" />
   </component>
 </project>
