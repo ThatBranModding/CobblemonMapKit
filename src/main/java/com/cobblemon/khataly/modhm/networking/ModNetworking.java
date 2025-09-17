@@ -28,6 +28,7 @@ import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModNetworking {
@@ -45,20 +46,79 @@ public class ModNetworking {
         PayloadTypeRegistry.playC2S().register(CutPacketC2S.ID, CutPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(StrengthPacketC2S.ID, StrengthPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(FlyPacketC2S.ID, FlyPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(TeleportPacketC2S.ID, TeleportPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(FlyMenuC2SPacket.ID, FlyMenuC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FlyMenuS2CPacket.ID, FlyMenuS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(FlashMenuC2SPacket.ID, FlashMenuC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FlashMenuS2CPacket.ID, FlashMenuS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(TeleportMenuC2SPacket.ID, TeleportMenuC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(TeleportMenuS2CPacket.ID, TeleportMenuS2CPacket.CODEC);
         registerC2SPackets();
     }
 
     public static void registerC2SPackets() {
         registerShowFlyMenuHandler();
+        registerShowTeleportMenuHandler();
         registerRockSmashHandler();
         registerCutHandler();
         registerStrengthHandler();
         registerFlyHandler();
         registerShowFlashMenuHandler();
+        registerTeleportHandler();
+    }
+
+    private static void registerShowTeleportMenuHandler() {
+        ServerPlayNetworking.registerGlobalReceiver(TeleportMenuC2SPacket.ID, (payload, context) -> {
+            System.out.println("Receiver TeleportMenuC2SPacket registrato");
+            ServerPlayerEntity player = context.player();
+            context.server().execute(() -> {
+                // ✅ Usa payload.pokemonId() perché è un record
+                boolean cantp = PartyUtils.pokemonHasTeleportInParty(player, payload.pokemonId());
+                System.out.println(cantp + " variabile bool tp nel pokemon");
+
+                // Invia pacchetto S2C
+                ServerPlayNetworking.send(player, new TeleportMenuS2CPacket(cantp));
+            });
+        });
+    }
+
+    private static void registerTeleportHandler() {
+        ServerPlayNetworking.registerGlobalReceiver(TeleportPacketC2S.ID, (payload, context) -> {
+            ServerPlayerEntity player = context.player();
+            context.server().execute(() -> {
+                // Controlla che abbia un Pokémon che conosce Teleport
+                if (!PartyUtils.hasTeleport(player)) {
+                    player.sendMessage(Text.literal("❌ No Pokémon in your party knows Teleport!"), false);
+                    return;
+                }
+
+                // Posizione spawn personalizzata (letto o respawn point)
+                BlockPos spawnPos = player.getSpawnPointPosition();
+                ServerWorld spawnWorld = null;
+
+                if (spawnPos != null) {
+                    spawnWorld = Objects.requireNonNull(player.getServer()).getWorld(player.getSpawnPointDimension());
+                }
+
+                // Se non ha letto, usa spawn del mondo
+                if (spawnPos == null || spawnWorld == null) {
+                    spawnWorld = Objects.requireNonNull(player.getServer()).getOverworld();
+                    spawnPos = spawnWorld.getSpawnPos();
+                }
+
+                // Esegui teletrasporto
+                player.teleport(
+                        spawnWorld,
+                        spawnPos.getX() + 0.5,
+                        spawnPos.getY() + 1,
+                        spawnPos.getZ() + 0.5,
+                        player.getYaw(),
+                        player.getPitch()
+                );
+
+                player.sendMessage(Text.literal("✨ Teleported to your spawn point!"), false);
+            });
+        });
     }
 
     private static void registerShowFlashMenuHandler() {
@@ -90,8 +150,6 @@ public class ModNetworking {
             });
         });
     }
-
-
 
 
 
@@ -163,7 +221,7 @@ public class ModNetworking {
                         20
                 ));
 
-                LOGGER.info("Block removed at " + pos + ", restore timer started");
+                LOGGER.info("Block Rock removed at {}, restore timer started", pos);
 
                 if (player.getWorld().random.nextFloat() < ROCK_SMASH_POKEMON_ENCOUNTER_CHANCE) {
                     spawnWildPokemonAttack(player);
@@ -182,9 +240,9 @@ public class ModNetworking {
         Pokemon pokemon = new Pokemon();
         pokemon.setSpecies(species);
         pokemon.setLevel(10);
-        pokemon.getMoveSet().setMove(2, Moves.INSTANCE.getByName("rockthrow").create());
-        pokemon.getMoveSet().setMove(3, Moves.INSTANCE.getByName("rockthrow").create());
-        pokemon.getMoveSet().setMove(1, Moves.INSTANCE.getByName("selfdestruct").create());
+        pokemon.getMoveSet().setMove(2, Objects.requireNonNull(Moves.INSTANCE.getByName("rockthrow")).create());
+        pokemon.getMoveSet().setMove(3, Objects.requireNonNull(Moves.INSTANCE.getByName("rockthrow")).create());
+        pokemon.getMoveSet().setMove(1, Objects.requireNonNull(Moves.INSTANCE.getByName("selfdestruct")).create());
 
         EntityType<PokemonEntity> type = CobblemonEntities.POKEMON;
         PokemonEntity pokemonEntity = new PokemonEntity(player.getWorld(), pokemon, type);

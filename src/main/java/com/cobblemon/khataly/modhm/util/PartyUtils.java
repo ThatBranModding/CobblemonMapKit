@@ -88,6 +88,24 @@ public class PartyUtils {
     }
 
     /**
+     * Ritorna se il party contiene Teleport
+     */
+    public static boolean hasTeleport(ServerPlayerEntity player) {
+        MoveTemplate teleport = Moves.INSTANCE.getByName("teleport");
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+
+        for (Pokemon pokemon : party) {
+            for (Move move : pokemon.getMoveSet().getMoves()) {
+                if (move.getTemplate() == teleport) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Ritorna il pokemon che conosce fly
      */
     public static Boolean pokemonHasFlyInParty(ServerPlayerEntity player, UUID pokemonId) {
@@ -124,6 +142,27 @@ public class PartyUtils {
         }
         return false;
     }
+
+    /**
+     * Ritorna il pokemon che conosce Teleport
+     */
+    public static Boolean pokemonHasTeleportInParty(ServerPlayerEntity player, UUID pokemonId) {
+        MoveTemplate teleport = Moves.INSTANCE.getByName("teleport");
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+
+        for (Pokemon pokemon : party) {
+            if (!pokemon.getUuid().equals(pokemonId)) continue;
+
+            for (Move move : pokemon.getMoveSet().getMoves()) {
+                if (move.getTemplate() == teleport) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
 
 
 }
