@@ -44,7 +44,6 @@ public class AnimationMoveScreen extends Screen {
         super(title);
         this.pokemon = pokemon;
 
-        // Inizializza il FloatingState correttamente
         floatingState.setCurrentPose("stand");
         floatingState.setCurrentAspects(pokemon.getAspects());
     }
@@ -61,26 +60,37 @@ public class AnimationMoveScreen extends Screen {
             context.fill(line.x, line.y, line.x + line.width, line.y + line.height, 0xFFFFFFFF);
         }
 
-        // Posizione e scala per centrare il Pokémon
+        // Centro della striscia blu
         int centerX = this.width / 2;
-        int centerY = this.height / 2 + 10; // offset verticale per centrare meglio
-        float pokemonScale = 4.5f; // scala sufficiente per rendere visibile qualsiasi modello
+        int centerY = (this.height - stripHeight) / 2;
 
-        // Renderizza il Pokémon
+        // Scala Pokémon (resta 9.0f)
+        float pokemonScale = 9.0f;
+
         context.getMatrices().push();
+
+        // Porta il pivot al centro della banda blu
         context.getMatrices().translate(centerX, centerY, 0);
-        context.getMatrices().scale(pokemonScale, pokemonScale, 1f);
+
+        // Compensa il pivot del modello (che è sui piedi) → lo alzo un po'
+        context.getMatrices().translate(0, -stripHeight / 4f, 0);
+
+        context.getMatrices().scale(pokemonScale, pokemonScale, pokemonScale);
+
+        // Rotazione per rivolgerlo verso l’utente
+        Quaternionf rotation = new Quaternionf()
+                .rotateXYZ((float) Math.toRadians(15), (float) Math.toRadians(-30), 0);
 
         PokemonGuiUtilsKt.drawProfilePokemon(
-                pokemon,                             // RenderablePokemon completo
+                pokemon,
                 context.getMatrices(),
-                new Quaternionf().rotateXYZ(0f, (float) Math.toRadians(180), 0f),
+                rotation,
                 PoseType.STAND,
                 floatingState,
                 delta,
-                5f,   // scale qui può rimanere 1.0f perché scalato sopra
-                true,   // applyProfileTransform
-                true,   // applyBaseScale
+                9.0f,   // lasciato invariato
+                true,
+                true,
                 1f, 1f, 1f, 1f
         );
 
@@ -93,13 +103,11 @@ public class AnimationMoveScreen extends Screen {
     public void tick() {
         timer++;
 
-        // Genera linee di velocità ogni 2 tick
         if (timer % 2 == 0) {
             int offset = random.nextInt(60) - 30;
             lines.add(new SpeedLine(-50, this.height / 2 + offset));
         }
 
-        // Aggiorna e rimuove linee fuori schermo
         Iterator<SpeedLine> it = lines.iterator();
         while (it.hasNext()) {
             SpeedLine line = it.next();
@@ -109,7 +117,6 @@ public class AnimationMoveScreen extends Screen {
             }
         }
 
-        // Chiudi lo schermo dopo 40 tick (~2 secondi)
         if (timer > 40 && this.client != null) {
             this.client.setScreen(null);
         }
