@@ -17,12 +17,12 @@ import org.apache.commons.codec.DecoderException;
 import java.util.HashSet;
 import java.util.Set;
 
-public record RockSmashPacketS2C(RenderablePokemon pokemon) implements CustomPayload {
+public record AnimationHMPacketS2C(RenderablePokemon pokemon) implements CustomPayload {
 
-    public static final Id<RockSmashPacketS2C> ID =
-            new Id<>(Identifier.of(HMMod.MOD_ID, "rocksmash_responce"));
+    public static final Id<AnimationHMPacketS2C> ID =
+            new Id<>(Identifier.of(HMMod.MOD_ID, "animation_responce"));
 
-    public static final PacketCodec<RegistryByteBuf, RockSmashPacketS2C> CODEC =
+    public static final PacketCodec<RegistryByteBuf, AnimationHMPacketS2C> CODEC =
             new PacketCodec<>() {
                 private final PacketCodec<ByteBuf, Identifier> speciesCodec =
                         PacketCodecs.string(32767).xmap(Identifier::tryParse, Identifier::toString);
@@ -30,7 +30,7 @@ public record RockSmashPacketS2C(RenderablePokemon pokemon) implements CustomPay
                 private final PacketCodec<ByteBuf, String> aspectCodec = PacketCodecs.STRING;
 
                 @Override
-                public RockSmashPacketS2C decode(RegistryByteBuf buf) {
+                public AnimationHMPacketS2C decode(RegistryByteBuf buf) {
                     // Leggi l'identifier come stringa
                     String idString = PacketCodecs.STRING.decode(buf);
                     Identifier speciesId = Identifier.tryParse(idString);
@@ -55,12 +55,12 @@ public record RockSmashPacketS2C(RenderablePokemon pokemon) implements CustomPay
                         aspects.add(PacketCodecs.STRING.decode(buf));
                     }
 
-                    return new RockSmashPacketS2C(new RenderablePokemon(species, aspects));
+                    return new AnimationHMPacketS2C(new RenderablePokemon(species, aspects));
                 }
 
 
                 @Override
-                public void encode(RegistryByteBuf buf, RockSmashPacketS2C packet) {
+                public void encode(RegistryByteBuf buf, AnimationHMPacketS2C packet) {
                     speciesCodec.encode(buf, packet.pokemon().getSpecies().getResourceIdentifier());
                     Set<String> aspects = packet.pokemon().getAspects();
                     sizeCodec.encode(buf, aspects.size());

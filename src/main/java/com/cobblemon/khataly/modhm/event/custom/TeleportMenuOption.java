@@ -2,6 +2,7 @@ package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.networking.packet.*;
+import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.pokemon.PokemonSentPreEvent;
@@ -67,6 +68,13 @@ public class TeleportMenuOption {
             kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
                 MinecraftClient mc = MinecraftClient.getInstance();
                 assert mc.player != null;
+
+                ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
+                    mc.execute(() -> {
+                        mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
+                    });
+                });
+
                 ClientPlayNetworking.send(new TeleportPacketC2S(mc.player.getBlockPos()));
                 return Unit.INSTANCE;
             };

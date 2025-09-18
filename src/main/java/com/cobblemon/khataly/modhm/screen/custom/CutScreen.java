@@ -1,9 +1,11 @@
 package com.cobblemon.khataly.modhm.screen.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
+import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
 import com.cobblemon.khataly.modhm.networking.packet.CutPacketC2S;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.GameRenderer;
@@ -72,8 +74,13 @@ public class CutScreen extends HandledScreen<CutScreenHandler> {
         if (mouseX >= yesX && mouseX <= yesX + buttonWidth &&
                 mouseY >= yesY && mouseY <= yesY + buttonHeight) {
             ClientPlayNetworking.send(new CutPacketC2S(handler.getPos()));
-            assert client != null;
-            client.setScreen(null);
+
+            ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
+                MinecraftClient mc = MinecraftClient.getInstance();
+                mc.execute(() -> {
+                    mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
+                });
+            });
             return true;
         }
 

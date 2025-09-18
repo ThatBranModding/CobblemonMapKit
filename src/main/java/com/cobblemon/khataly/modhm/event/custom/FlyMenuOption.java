@@ -1,8 +1,10 @@
 package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
+import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
 import com.cobblemon.khataly.modhm.networking.packet.FlyMenuC2SPacket;
 import com.cobblemon.khataly.modhm.networking.packet.FlyMenuS2CPacket;
+import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.khataly.modhm.screen.custom.FlyTargetListScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -67,7 +69,14 @@ public class FlyMenuOption {
 
             kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
             kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
+
                 MinecraftClient mc = MinecraftClient.getInstance();
+                ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
+                    mc.execute(() -> {
+                        mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
+                    });
+                });
+
                 mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("FLY Menu"))));
                 System.out.println("[FlyMenuOption] Opzione Fly premuta!");
                 return Unit.INSTANCE;

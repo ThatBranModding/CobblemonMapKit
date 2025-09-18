@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModNetworking {
@@ -44,18 +43,24 @@ public class ModNetworking {
     public static void registerPackets() {
         ModConfig.load(); // Carica la configurazione all’avvio
 
+        PayloadTypeRegistry.playS2C().register(AnimationHMPacketS2C.ID, AnimationHMPacketS2C.CODEC);
+
         PayloadTypeRegistry.playC2S().register(RockSmashPacketC2S.ID, RockSmashPacketC2S.CODEC);
-        PayloadTypeRegistry.playS2C().register(RockSmashPacketS2C.ID, RockSmashPacketS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(CutPacketC2S.ID, CutPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(StrengthPacketC2S.ID, StrengthPacketC2S.CODEC);
+
         PayloadTypeRegistry.playC2S().register(FlyPacketC2S.ID, FlyPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(TeleportPacketC2S.ID, TeleportPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(FlyMenuC2SPacket.ID, FlyMenuC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FlyMenuS2CPacket.ID, FlyMenuS2CPacket.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(FlashPacketC2S.ID, FlashPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(FlashMenuC2SPacket.ID, FlashMenuC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FlashMenuS2CPacket.ID, FlashMenuS2CPacket.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(TeleportPacketC2S.ID, TeleportPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(TeleportMenuC2SPacket.ID, TeleportMenuC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(TeleportMenuS2CPacket.ID, TeleportMenuS2CPacket.CODEC);
+
         registerC2SPackets();
     }
 
@@ -68,6 +73,7 @@ public class ModNetworking {
         registerFlyHandler();
         registerShowFlashMenuHandler();
         registerTeleportHandler();
+        registerFlashHandler();
     }
 
     private static void registerShowTeleportMenuHandler() {
@@ -93,6 +99,10 @@ public class ModNetworking {
                 if (!PartyUtils.hasTeleport(player)) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Teleport!"), false);
                     return;
+                }
+                RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "teleport");
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
                 }
 
                 // Posizione spawn personalizzata (letto o respawn point)
@@ -124,6 +134,47 @@ public class ModNetworking {
         });
     }
 
+    private static void registerFlashHandler() {
+        ServerPlayNetworking.registerGlobalReceiver(FlashPacketC2S.ID, (payload, context) -> {
+            ServerPlayerEntity player = context.player();
+            context.server().execute(() -> {
+                // 🔹 Verifica se ha un Pokémon con Flash
+                if (!PartyUtils.hasFlash(player)) {
+                    player.sendMessage(Text.literal("❌ No Pokémon in your party knows Flash!"), false);
+                    return;
+                }
+
+                // 🔹 Controlla se ha già Night Vision
+                if (player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION)) {
+                    player.sendMessage(Text.literal("❗ Flash is already active!"), false);
+                    return;
+                }
+
+                // Mostra animazione
+                RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "flash");
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
+                }
+
+                int durationSeconds = ModConfig.FLASH_DURATION;
+                int durationTicks = durationSeconds * 20;
+
+                // 🔹 Applica Night Vision lato server
+                player.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+                        net.minecraft.entity.effect.StatusEffects.NIGHT_VISION,
+                        durationTicks,
+                        0,
+                        false,
+                        false
+                ));
+
+                player.sendMessage(Text.literal("✨ Flash activated! You can see clearly for " + durationSeconds + " seconds."), false);
+            });
+        });
+    }
+
+
+
     private static void registerShowFlashMenuHandler() {
         ServerPlayNetworking.registerGlobalReceiver(FlashMenuC2SPacket.ID, (payload, context) -> {
             System.out.println("Receiver FlashMenuC2SPacket registrato");
@@ -133,8 +184,8 @@ public class ModNetworking {
                 boolean canFlash = PartyUtils.pokemonHasFlashInParty(player, payload.pokemonId());
                 System.out.println(canFlash + " variabile bool flash nel pokemon");
 
-                // Invia pacchetto S2C
-                ServerPlayNetworking.send(player, new FlashMenuS2CPacket(canFlash));
+                    ServerPlayNetworking.send(player, new FlashMenuS2CPacket(canFlash));
+
             });
         });
     }
@@ -169,6 +220,10 @@ public class ModNetworking {
                 if (!player.getWorld().isChunkLoaded(targetPos)) {
                     player.sendMessage(Text.literal("⚠️ The target location is not loaded!"), false);
                     return;
+                }
+                RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "fly");
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
                 }
 
                 player.teleport((ServerWorld) player.getWorld(),
@@ -209,7 +264,7 @@ public class ModNetworking {
                 // Recupera il Pokémon del giocatore che conosce la mossa Rock Smash
                 RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "rocksmash");
                 if (renderablePokemon != null) {
-                    ServerPlayNetworking.send(player, new RockSmashPacketS2C(renderablePokemon));
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
                 }
 
 
@@ -289,6 +344,10 @@ public class ModNetworking {
                     return;
                 }
 
+                RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "cut");
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
+                }
                 player.sendMessage(Text.literal("💥 you used Cut!"), false);
                 player.playSoundToPlayer(ModSounds.CUTTABLE_TREE,SoundCategory.PLAYERS,1,1);
 
@@ -342,6 +401,10 @@ public class ModNetworking {
                     return;
                 }
 
+                RenderablePokemon renderablePokemon = PartyUtils.getRenderPokemonByMove(player, "strength");
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
+                }
                 player.sendMessage(Text.literal("💥 you used Strength!"), false);
                 player.playSoundToPlayer(ModSounds.MOVABLE_ROCK,SoundCategory.PLAYERS,1,1);
                 // Rimuovi blocco attuale e aggiorna mappature

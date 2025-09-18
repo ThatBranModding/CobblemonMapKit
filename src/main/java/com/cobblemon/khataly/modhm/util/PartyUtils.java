@@ -111,6 +111,24 @@ public class PartyUtils {
         return false;
     }
 
+    /**
+     * Ritorna se il party contiene flash
+     */
+    public static boolean hasFlash(ServerPlayerEntity player) {
+        MoveTemplate teleport = Moves.INSTANCE.getByName("flash");
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+
+        for (Pokemon pokemon : party) {
+            for (Move move : pokemon.getMoveSet().getMoves()) {
+                if (move.getTemplate() == teleport) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     public static RenderablePokemon getRenderPokemonByMove(ServerPlayerEntity player,String hm) {
         MoveTemplate HM = Moves.INSTANCE.getByName(hm);

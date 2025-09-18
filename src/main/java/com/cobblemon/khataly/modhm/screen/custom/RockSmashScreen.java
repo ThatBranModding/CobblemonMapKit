@@ -1,9 +1,8 @@
 package com.cobblemon.khataly.modhm.screen.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
-import com.cobblemon.khataly.modhm.networking.packet.FlashMenuS2CPacket;
 import com.cobblemon.khataly.modhm.networking.packet.RockSmashPacketC2S;
-import com.cobblemon.khataly.modhm.networking.packet.RockSmashPacketS2C;
+import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
@@ -11,7 +10,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -82,7 +80,7 @@ public class RockSmashScreen extends HandledScreen<RockSmashScreenHandler> {
             // 1️⃣ Invia il pacchetto al server
             ClientPlayNetworking.send(new RockSmashPacketC2S(handler.getPos()));
 
-            ClientPlayNetworking.registerGlobalReceiver(RockSmashPacketS2C.ID, (payload, context) -> {
+            ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
                 MinecraftClient mc = MinecraftClient.getInstance();
                 mc.execute(() -> {
                     mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));

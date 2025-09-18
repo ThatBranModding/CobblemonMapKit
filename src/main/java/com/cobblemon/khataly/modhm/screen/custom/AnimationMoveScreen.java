@@ -32,7 +32,7 @@ public class AnimationMoveScreen extends Screen {
         }
 
         void move() {
-            this.x += 12;
+            this.x += 20;
         }
 
         boolean isOffScreen(int screenWidth) {
@@ -50,12 +50,24 @@ public class AnimationMoveScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Sfondo blu centrale
         int stripHeight = 120;
         int stripY = (this.height - stripHeight) / 2;
-        context.fill(0, stripY, this.width, stripY + stripHeight, 0xFF3A80D9);
 
-        // Disegna le linee di velocità
+        // Gradient blu scuro → blu medio
+        int topColor = 0xFF0A1A33;   // blu molto scuro
+        int bottomColor = 0xFF1E3A66; // blu un po' più chiaro
+        context.fillGradient(0, stripY, this.width, stripY + stripHeight, topColor, bottomColor);
+
+        // Piccole "stelle" random che luccicano
+        for (int i = 0; i < 20; i++) {
+            int starX = random.nextInt(this.width);
+            int starY = stripY + random.nextInt(stripHeight);
+            int alpha = 150 + random.nextInt(105); // trasparenza variabile (150-255)
+            int starColor = (alpha << 24) | 0xFFFFFF;
+            context.fill(starX, starY, starX + 2, starY + 2, starColor);
+        }
+
+        // Disegna le linee di velocità (più veloci)
         for (SpeedLine line : lines) {
             context.fill(line.x, line.y, line.x + line.width, line.y + line.height, 0xFFFFFFFF);
         }
@@ -64,20 +76,13 @@ public class AnimationMoveScreen extends Screen {
         int centerX = this.width / 2;
         int centerY = (this.height - stripHeight) / 2;
 
-        // Scala Pokémon (resta 9.0f)
         float pokemonScale = 9.0f;
-
         context.getMatrices().push();
 
-        // Porta il pivot al centro della banda blu
         context.getMatrices().translate(centerX, centerY, 0);
-
-        // Compensa il pivot del modello (che è sui piedi) → lo alzo un po'
         context.getMatrices().translate(0, -stripHeight / 4f, 0);
-
         context.getMatrices().scale(pokemonScale, pokemonScale, pokemonScale);
 
-        // Rotazione per rivolgerlo verso l’utente
         Quaternionf rotation = new Quaternionf()
                 .rotateXYZ((float) Math.toRadians(15), (float) Math.toRadians(-30), 0);
 
@@ -88,16 +93,16 @@ public class AnimationMoveScreen extends Screen {
                 PoseType.STAND,
                 floatingState,
                 delta,
-                9.0f,   // lasciato invariato
+                9.0f,
                 true,
                 true,
                 1f, 1f, 1f, 1f
         );
 
         context.getMatrices().pop();
-
         super.render(context, mouseX, mouseY, delta);
     }
+
 
     @Override
     public void tick() {
