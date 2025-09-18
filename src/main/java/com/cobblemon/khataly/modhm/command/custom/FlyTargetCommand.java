@@ -1,6 +1,6 @@
 package com.cobblemon.khataly.modhm.command.custom;
 
-import com.cobblemon.khataly.modhm.manager.FlyTargetManager;
+import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
 import com.cobblemon.khataly.modhm.util.PartyUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -21,7 +21,7 @@ public class FlyTargetCommand {
                 .then(CommandManager.literal("list")
                         .executes(context -> {
                             ServerCommandSource source = context.getSource();
-                            Map<String, FlyTargetManager.TargetInfo> targets = FlyTargetManager.getAllTargets();
+                            Map<String, FlyTargetConfig.TargetInfo> targets = FlyTargetConfig.getAllTargets();
 
                             if (targets.isEmpty()) {
                                 source.sendMessage(Text.literal("§eNo fly targets registered."));
@@ -49,7 +49,7 @@ public class FlyTargetCommand {
                                     assert player != null;
                                     BlockPos pos = player.getBlockPos();
 
-                                    boolean success = FlyTargetManager.addTarget(name, player.getServerWorld().getRegistryKey(), pos);
+                                    boolean success = FlyTargetConfig.addTarget(name, player.getServerWorld().getRegistryKey(), pos);
 
                                     if (success) {
                                         source.sendMessage(Text.literal("§aFly target '" + name + "' created at position " +
@@ -70,13 +70,13 @@ public class FlyTargetCommand {
                                     ServerCommandSource source = context.getSource();
                                     String name = StringArgumentType.getString(context, "name");
 
-                                    var target = FlyTargetManager.getTarget(name);
+                                    var target = FlyTargetConfig.getTarget(name);
                                     if (target == null) {
                                         source.sendMessage(Text.literal("§cFly target '" + name + "' not found."));
                                         return 0;
                                     }
 
-                                    FlyTargetManager.removeTarget(name);
+                                    FlyTargetConfig.removeTarget(name);
                                     source.sendMessage(Text.literal("§aFly target '" + name + "' removed."));
                                     return 1;
                                 })
@@ -91,7 +91,7 @@ public class FlyTargetCommand {
                                     ServerPlayerEntity player = source.getPlayer();
                                     String name = StringArgumentType.getString(context, "name");
 
-                                    var target = FlyTargetManager.getTarget(name);
+                                    var target = FlyTargetConfig.getTarget(name);
                                     if (target == null) {
                                         source.sendMessage(Text.literal("§cFly target '" + name + "' not found."));
                                         return 0;
@@ -116,6 +116,16 @@ public class FlyTargetCommand {
                                     return 1;
                                 })
                         )
+                )
+
+                // flytarget reload
+                .then(CommandManager.literal("reload")
+                        .executes(context -> {
+                            ServerCommandSource source = context.getSource();
+                            FlyTargetConfig.reload();
+                            source.sendMessage(Text.literal("§aFly targets reloaded from file."));
+                            return 1;
+                        })
                 )
         );
     }

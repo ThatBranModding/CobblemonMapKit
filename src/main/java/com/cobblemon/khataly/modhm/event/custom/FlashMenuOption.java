@@ -1,7 +1,10 @@
 package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
-import com.cobblemon.khataly.modhm.networking.packet.*;
+import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
+import com.cobblemon.khataly.modhm.networking.packet.FlashMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.FlashMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.FlashPacketC2S;
 import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -15,76 +18,92 @@ import com.google.common.collect.Multimap;
 import kotlin.Unit;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.joml.Vector3f;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class FlashMenuOption {
 
-    // Flag globale lato client: indica se aggiungere Flash alla ruota
-    private static boolean canAddFlashOption = false;
+    // Flag lato client: indica quali Pokémon possono usare Flash
+    private static final Map<UUID, Boolean> flashFlags = new HashMap<>();
 
     public static void register() {
         registerFlashMenuResponse();
         registerPokemonSentEvent();
-        registerGUIEvent();
-        registerGUICloseListener();
     }
 
-    /** Riceve il pacchetto dal server e aggiorna il flag globale */
+    /** Riceve il pacchetto dal server e aggiorna lo stato Flash */
     private static void registerFlashMenuResponse() {
         ClientPlayNetworking.registerGlobalReceiver(FlashMenuS2CPacket.ID, (payload, context) -> {
             MinecraftClient mc = MinecraftClient.getInstance();
             mc.execute(() -> {
-                canAddFlashOption = payload.canFlash(); // true se il Pokémon può usare Flash
-                System.out.println("[FlashMenuOption] Flag aggiornato: canAddFlashOption = " + canAddFlashOption);
+                flashFlags.put(payload.pokemonId(), payload.canFlash());
+                System.out.println("[FlashMenuOption] Aggiornato flashFlags: " + flashFlags);
             });
+
+            // registra l'opzione Flash solo per questo Pokémon
+            registerGUIEvent(payload.pokemonId());
         });
     }
 
     /** Evento quando il Pokémon esce dalla Pokéball */
     private static void registerPokemonSentEvent() {
         CancelableObservable<PokemonSentPreEvent> observable = CobblemonEvents.POKEMON_SENT_PRE;
-        observable.subscribe(Priority.NORMAL, event -> {
+        observable.subscribe(Priority.HIGHEST, event -> {
             // Invia pacchetto al server per verificare se il Pokémon conosce Flash
             ClientPlayNetworking.send(new FlashMenuC2SPacket(event.getPokemon().getUuid()));
-            System.out.println("[FlashMenuOption] Pacchetto FlashMenuC2SPacket inviato al server");
+            System.out.println("[FlashMenuOption] Pacchetto FlashMenuC2SPacket inviato al server - UUID " + event.getPokemon().getUuid());
             return null;
         });
     }
 
-    /** Evento della GUI di interazione: aggiunge Flash solo se il flag è true */
-    private static void registerGUIEvent() {
+    private static void registerGUIEvent(UUID serverFlashUuid) {
         EventObservable<PokemonInteractionGUICreationEvent> observable = CobblemonEvents.POKEMON_INTERACTION_GUI_CREATION;
-        observable.subscribe(Priority.NORMAL, event -> {
-            if (!canAddFlashOption) return null;
+
+        observable.subscribe(Priority.LOWEST, event -> {
+            if (!flashFlags.getOrDefault(serverFlashUuid, false)) return null;
+
+            // Controlla se Flash è già presente in questa GUI
+            boolean flashAdded = false;
+            for (Map.Entry<Orientation, InteractWheelOption> entry : event.getOptions().entries()) {
+                InteractWheelOption existingOption = entry.getValue();
+                if (existingOption != null &&
+                        existingOption.getTooltipText() != null &&
+                        existingOption.getTooltipText().equals("Flash")) {
+                    flashAdded = true;
+                    break;
+                }
+            }
+            if (flashAdded) return null;
 
             Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/flash/icon_flash.png");
-            Identifier secondaryIcon = null;
             String tooltip = "Flash";
 
             kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
             kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
                 MinecraftClient mc = MinecraftClient.getInstance();
+                assert mc.player != null;
 
                 ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
-                    mc.execute(() -> {
-                        mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
-                    });
+                    mc.execute(() -> mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon())));
                 });
-                assert mc.player != null;
+
                 ClientPlayNetworking.send(new FlashPacketC2S(mc.player.getBlockPos()));
+
+                System.out.println("[FlashMenuOption] Opzione Flash premuta per UUID " + serverFlashUuid);
                 return Unit.INSTANCE;
             };
 
-
-            InteractWheelOption option = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
+            InteractWheelOption flashOption = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
 
             // default TOP_LEFT
             Orientation chosenOrientation = Orientation.TOP_LEFT;
 
-            // Se TOP_LEFT occupato, cerca il primo libero
+            // Se occupato, trova prima posizione libera
             Multimap<Orientation, InteractWheelOption> options = event.getOptions();
             if (options.containsKey(chosenOrientation) && !options.get(chosenOrientation).isEmpty()) {
                 for (Orientation orientation : Orientation.values()) {
@@ -95,25 +114,10 @@ public class FlashMenuOption {
                 }
             }
 
-            // aggiungi l’opzione
-            event.addOption(chosenOrientation, option);
+            // Aggiungi Flash una sola volta
+            event.addOption(chosenOrientation, flashOption);
 
             return null;
-        });
-    }
-
-    /** Resetta il flag quando si chiude la GUI di interazione */
-    private static void registerGUICloseListener() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.execute(() -> {
-            mc.setScreen(new Screen(Text.literal("")) {
-                @Override
-                public void removed() {
-                    canAddFlashOption = false; // reset flag quando la GUI si chiude
-                    super.removed();
-                    System.out.println("[FlashMenuOption] Flag canAddFlashOption resettato");
-                }
-            });
         });
     }
 }

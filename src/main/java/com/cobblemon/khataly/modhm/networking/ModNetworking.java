@@ -1,5 +1,6 @@
 package com.cobblemon.khataly.modhm.networking;
 
+import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.packet.*;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
@@ -84,7 +85,7 @@ public class ModNetworking {
                 System.out.println(cantp + " variabile bool tp nel pokemon");
 
                 // Invia pacchetto S2C
-                ServerPlayNetworking.send(player, new TeleportMenuS2CPacket(cantp));
+                ServerPlayNetworking.send(player, TeleportMenuS2CPacket.fromServerData(payload.pokemonId(), cantp));
             });
         });
     }
@@ -182,7 +183,7 @@ public class ModNetworking {
                 boolean canFlash = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"flash");
                 System.out.println(canFlash + " variabile bool flash nel pokemon");
 
-                    ServerPlayNetworking.send(player, new FlashMenuS2CPacket(canFlash));
+                ServerPlayNetworking.send(player, FlashMenuS2CPacket.fromServerData(payload.pokemonId(), canFlash));
 
             });
         });
@@ -190,18 +191,20 @@ public class ModNetworking {
 
     private static void registerShowFlyMenuHandler() {
         ServerPlayNetworking.registerGlobalReceiver(FlyMenuC2SPacket.ID, (payload, context) -> {
-            System.out.println("Receiver FlyMenuC2SPacket registrato");
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
-                // ✅ Usa payload.pokemonId() perché è un record
-                boolean canFly = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"fly");
-                System.out.println(canFly + " variabile bool fly nel pokemon");
+                boolean canFly = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(), "fly");
 
-                // Invia pacchetto S2C
-                ServerPlayNetworking.send(player, new FlyMenuS2CPacket(canFly));
+                // Prende tutti i target dal server
+                var targets = FlyTargetConfig.getAllTargets();
+
+                // Invia pacchetto completo al client con UUID del Pokémon
+                ServerPlayNetworking.send(player, FlyMenuS2CPacket.fromServerData(payload.pokemonId(), canFly, targets));
             });
         });
     }
+
+
 
 
 

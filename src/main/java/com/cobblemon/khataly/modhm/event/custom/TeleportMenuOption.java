@@ -1,7 +1,10 @@
 package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
-import com.cobblemon.khataly.modhm.networking.packet.*;
+import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
+import com.cobblemon.khataly.modhm.networking.packet.TeleportMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.TeleportMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.TeleportPacketC2S;
 import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -15,53 +18,67 @@ import com.google.common.collect.Multimap;
 import kotlin.Unit;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.joml.Vector3f;
 
+import java.util.*;
+
 public class TeleportMenuOption {
 
-    // Flag globale lato client: indica se aggiungere Teleport alla ruota
-    private static boolean canAddTeleportOption = false;
+    // Flag lato client: indica quali Pokémon possono usare Teleport
+    private static final Map<UUID, Boolean> tpFlags = new HashMap<>();
 
     public static void register() {
         registerTeleportMenuResponse();
         registerPokemonSentEvent();
-        registerGUIEvent();
-        registerGUICloseListener();
     }
 
-    /** Riceve il pacchetto dal server e aggiorna il flag globale */
+    /** Riceve il pacchetto dal server e aggiorna lo stato Teleport */
     private static void registerTeleportMenuResponse() {
         ClientPlayNetworking.registerGlobalReceiver(TeleportMenuS2CPacket.ID, (payload, context) -> {
             MinecraftClient mc = MinecraftClient.getInstance();
             mc.execute(() -> {
-                canAddTeleportOption = payload.cantp(); // true se il Pokémon può usare Teleport
-                System.out.println("[TeleportMenuOption] Flag aggiornato: canAddTeleportOption = " + canAddTeleportOption);
+                tpFlags.put(payload.pokemonId(), payload.canTeleport());
+                System.out.println("[TeleportMenuOption] Aggiornato tpFlags: " + tpFlags);
             });
+
+            // registra l'opzione Teleport solo per questo Pokémon
+            registerGUIEvent(payload.pokemonId());
         });
     }
 
     /** Evento quando il Pokémon esce dalla Pokéball */
     private static void registerPokemonSentEvent() {
         CancelableObservable<PokemonSentPreEvent> observable = CobblemonEvents.POKEMON_SENT_PRE;
-        observable.subscribe(Priority.NORMAL, event -> {
+        observable.subscribe(Priority.HIGHEST, event -> {
             // Invia pacchetto al server per verificare se il Pokémon conosce Teleport
             ClientPlayNetworking.send(new TeleportMenuC2SPacket(event.getPokemon().getUuid()));
-            System.out.println("[TeleportMenuOption] Pacchetto TeleportMenuC2SPacket inviato al server");
+            System.out.println("[TeleportMenuOption] Pacchetto TeleportMenuC2SPacket inviato al server - UUID " + event.getPokemon().getUuid());
             return null;
         });
     }
 
-    /** Evento della GUI di interazione: aggiunge Teleport solo se il flag è true */
-    private static void registerGUIEvent() {
+    private static void registerGUIEvent(UUID serverTpUuid) {
         EventObservable<PokemonInteractionGUICreationEvent> observable = CobblemonEvents.POKEMON_INTERACTION_GUI_CREATION;
-        observable.subscribe(Priority.NORMAL, event -> {
-            if (!canAddTeleportOption) return null;
+
+        observable.subscribe(Priority.LOWEST, event -> {
+            if (!tpFlags.getOrDefault(serverTpUuid, false)) return null;
+
+            // Controlla se Teleport è già presente in questa GUI
+            boolean teleportAdded = false;
+            for (Map.Entry<Orientation, InteractWheelOption> entry : event.getOptions().entries()) {
+                InteractWheelOption existingOption = entry.getValue();
+                if (existingOption != null &&
+                        existingOption.getTooltipText() != null &&
+                        existingOption.getTooltipText().equals("Teleport")) {
+                    teleportAdded = true;
+                    break;
+                }
+            }
+            if (teleportAdded) return null;
 
             Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/teleport/icon_teleport.png");
-            Identifier secondaryIcon = null;
             String tooltip = "Teleport";
 
             kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
@@ -70,21 +87,21 @@ public class TeleportMenuOption {
                 assert mc.player != null;
 
                 ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
-                    mc.execute(() -> {
-                        mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
-                    });
+                    mc.execute(() -> mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon())));
                 });
 
                 ClientPlayNetworking.send(new TeleportPacketC2S(mc.player.getBlockPos()));
+
+                System.out.println("[TeleportMenuOption] Opzione Teleport premuta per UUID " + serverTpUuid);
                 return Unit.INSTANCE;
             };
 
-            InteractWheelOption option = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
+            InteractWheelOption tpOption = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
 
             // default TOP_LEFT
             Orientation chosenOrientation = Orientation.TOP_LEFT;
 
-            // Se TOP_LEFT occupato, cerca il primo libero
+            // Se occupato, trova prima posizione libera
             Multimap<Orientation, InteractWheelOption> options = event.getOptions();
             if (options.containsKey(chosenOrientation) && !options.get(chosenOrientation).isEmpty()) {
                 for (Orientation orientation : Orientation.values()) {
@@ -95,25 +112,10 @@ public class TeleportMenuOption {
                 }
             }
 
-            // aggiungi l’opzione
-            event.addOption(chosenOrientation, option);
+            // Aggiungi Teleport una sola volta
+            event.addOption(chosenOrientation, tpOption);
 
             return null;
-        });
-    }
-
-    /** Resetta il flag quando si chiude la GUI di interazione */
-    private static void registerGUICloseListener() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.execute(() -> {
-            mc.setScreen(new Screen(Text.literal("")) {
-                @Override
-                public void removed() {
-                    canAddTeleportOption = false; // reset flag quando la GUI si chiude
-                    super.removed();
-                    System.out.println("[FlashMenuOption] Flag canAddTeleportOption resettato");
-                }
-            });
         });
     }
 }

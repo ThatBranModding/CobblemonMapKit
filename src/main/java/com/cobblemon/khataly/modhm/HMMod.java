@@ -7,7 +7,7 @@ import com.cobblemon.khataly.modhm.command.ModCommands;
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.item.ModItemGroups;
 import com.cobblemon.khataly.modhm.item.ModItems;
-import com.cobblemon.khataly.modhm.manager.FlyTargetManager;
+import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
 import com.cobblemon.khataly.modhm.networking.ModNetworking;
 import com.cobblemon.khataly.modhm.screen.ModScreenHandlers;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
@@ -26,7 +26,7 @@ public class HMMod implements ModInitializer {
     @Override
     public void onInitialize() {
         ModConfig.load();
-        FlyTargetManager.loadFromFile();
+        FlyTargetConfig.load();
         ModSounds.registerSounds();
         ModScreenHandlers.registerScreenHandlers();
         ModNetworking.registerPackets();

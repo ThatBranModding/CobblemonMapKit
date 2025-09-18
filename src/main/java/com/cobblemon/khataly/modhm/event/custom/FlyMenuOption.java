@@ -18,77 +18,93 @@ import com.google.common.collect.Multimap;
 import kotlin.Unit;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.joml.Vector3f;
 
+import java.util.*;
+
 public class FlyMenuOption {
 
-    // Flag globale lato client: indica se aggiungere Fly alla ruota
-    private static boolean canAddFlyOption = false;
+    // Flag lato client: indica quali Pokémon possono usare Fly
+    private static final Map<UUID, Boolean> flyFlags = new HashMap<>();
+    private static List<FlyMenuS2CPacket.FlyTargetEntry> cachedTargets = new ArrayList<>();
 
     public static void register() {
         registerFlyMenuResponse();
         registerPokemonSentEvent();
-        registerGUIEvent();
-        registerGUICloseListener();
     }
 
-    /** Riceve il pacchetto dal server e aggiorna il flag globale */
+    /** Riceve il pacchetto dal server e aggiorna lo stato Fly */
     private static void registerFlyMenuResponse() {
         ClientPlayNetworking.registerGlobalReceiver(FlyMenuS2CPacket.ID, (payload, context) -> {
             MinecraftClient mc = MinecraftClient.getInstance();
             mc.execute(() -> {
-                canAddFlyOption = payload.canFly(); // true se il Pokémon può usare Fly
-                System.out.println("[FlyMenuOption] Flag aggiornato: canAddFlyOption = " + canAddFlyOption);
+                flyFlags.put(payload.pokemonId(), payload.canFly());
+                cachedTargets = payload.targets();
+                System.out.println("[FlyMenuOption] Aggiornato FlyFlags: " + flyFlags +
+                        ", targets ricevuti: " + cachedTargets.size());
             });
+
+            // registra l'opzione Fly per questo Pokémon
+            registerGUIEvent(payload.pokemonId());
         });
     }
 
     /** Evento quando il Pokémon esce dalla Pokéball */
     private static void registerPokemonSentEvent() {
         CancelableObservable<PokemonSentPreEvent> observable = CobblemonEvents.POKEMON_SENT_PRE;
-        observable.subscribe(Priority.NORMAL, event -> {
-            // Invia pacchetto al server per verificare se il Pokémon conosce Fly
+        observable.subscribe(Priority.HIGHEST, event -> {
             ClientPlayNetworking.send(new FlyMenuC2SPacket(event.getPokemon().getUuid()));
-            System.out.println("[FlyMenuOption] Pacchetto FlyMenuC2SPacket inviato al server");
+            System.out.println("[FlyMenuOption] Pacchetto FlyMenuC2SPacket inviato al server - UUID " + event.getPokemon().getUuid());
             return null;
         });
     }
 
-    /** Evento della GUI di interazione: aggiunge Fly solo se il flag è true */
-    private static void registerGUIEvent() {
+    private static void registerGUIEvent(UUID serverFlyUuid) {
         EventObservable<PokemonInteractionGUICreationEvent> observable = CobblemonEvents.POKEMON_INTERACTION_GUI_CREATION;
-        observable.subscribe(Priority.NORMAL, event -> {
-            if (!canAddFlyOption) return null;
+
+        observable.subscribe(Priority.LOWEST, event -> {
+            if (!flyFlags.getOrDefault(serverFlyUuid, false)) return null;
+
+            // Controlla se l'opzione Fly è già presente in questa apertura GUI
+            boolean flyAdded = false;
+            for (Map.Entry<Orientation, InteractWheelOption> entry : event.getOptions().entries()) {
+                InteractWheelOption existingOption = entry.getValue();
+                if (existingOption != null &&
+                        existingOption.getTooltipText() != null &&
+                        existingOption.getTooltipText().equals("Fly")) {
+                    flyAdded = true;
+                    break;
+                }
+            }
+
+            if (flyAdded) {
+                return null; // Fly già aggiunto, non duplicare
+            }
 
             Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/fly/icon_fly.png");
-            Identifier secondaryIcon = null;
             String tooltip = "Fly";
 
             kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
             kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
-
                 MinecraftClient mc = MinecraftClient.getInstance();
+
                 ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
-                    mc.execute(() -> {
-                        mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"),payload.pokemon()));
-                    });
+                    mc.execute(() -> mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon())));
                 });
 
-                mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("FLY Menu"))));
-                System.out.println("[FlyMenuOption] Opzione Fly premuta!");
+                mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("FLY Menu"), cachedTargets)));
+                System.out.println("[FlyMenuOption] Opzione Fly premuta per UUID " + serverFlyUuid);
                 return Unit.INSTANCE;
             };
 
+            InteractWheelOption flyOption = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
 
-            InteractWheelOption option = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
-
-            // default TOP_LEFT
+            // Default TOP_LEFT
             Orientation chosenOrientation = Orientation.TOP_LEFT;
 
-            // Se TOP_LEFT occupato, cerca il primo libero
+            // Se TOP_LEFT occupato, trova prima posizione libera
             Multimap<Orientation, InteractWheelOption> options = event.getOptions();
             if (options.containsKey(chosenOrientation) && !options.get(chosenOrientation).isEmpty()) {
                 for (Orientation orientation : Orientation.values()) {
@@ -99,25 +115,13 @@ public class FlyMenuOption {
                 }
             }
 
-            // aggiungi l’opzione
-            event.addOption(chosenOrientation, option);
+            // Aggiungi Fly una sola volta
+            event.addOption(chosenOrientation, flyOption);
 
             return null;
         });
     }
 
-    /** Resetta il flag quando si chiude la GUI di interazione */
-    private static void registerGUICloseListener() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.execute(() -> {
-            mc.setScreen(new Screen(Text.literal("")) {
-                @Override
-                public void removed() {
-                    canAddFlyOption = false; // reset flag quando la GUI si chiude
-                    super.removed();
-                    System.out.println("[FlyMenuOption] Flag canAddFlyOption resettato");
-                }
-            });
-        });
-    }
+
+
 }
