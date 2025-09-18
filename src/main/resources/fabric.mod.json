@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "cobblemon_fabric_mdk",
+  "id": "modhm",
   "version": "${version}",
-  "name": "Cobblemon Fabric MDK",
+  "name": "Cobblemon HM Mod",
   "description": "Mod which brings HM functionality into cobblemon world",
   "authors": [
     "Khataly"
