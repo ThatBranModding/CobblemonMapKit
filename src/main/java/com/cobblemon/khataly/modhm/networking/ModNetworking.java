@@ -41,8 +41,6 @@ public class ModNetworking {
     private static final Logger LOGGER = LoggerFactory.getLogger("ModNetworking");
 
     public static void registerPackets() {
-        ModConfig.load(); // Carica la configurazione all’avvio
-
         PayloadTypeRegistry.playS2C().register(AnimationHMPacketS2C.ID, AnimationHMPacketS2C.CODEC);
 
         PayloadTypeRegistry.playC2S().register(RockSmashPacketC2S.ID, RockSmashPacketC2S.CODEC);
@@ -82,7 +80,7 @@ public class ModNetworking {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 // ✅ Usa payload.pokemonId() perché è un record
-                boolean cantp = PartyUtils.pokemonHasTeleportInParty(player, payload.pokemonId());
+                boolean cantp = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"teleport");
                 System.out.println(cantp + " variabile bool tp nel pokemon");
 
                 // Invia pacchetto S2C
@@ -96,7 +94,7 @@ public class ModNetworking {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 // Controlla che abbia un Pokémon che conosce Teleport
-                if (!PartyUtils.hasTeleport(player)) {
+                if (!PartyUtils.hasMove(player,"teleport")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Teleport!"), false);
                     return;
                 }
@@ -139,7 +137,7 @@ public class ModNetworking {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 // 🔹 Verifica se ha un Pokémon con Flash
-                if (!PartyUtils.hasFlash(player)) {
+                if (!PartyUtils.hasMove(player,"flash")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Flash!"), false);
                     return;
                 }
@@ -181,7 +179,7 @@ public class ModNetworking {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 // ✅ Usa payload.pokemonId() perché è un record
-                boolean canFlash = PartyUtils.pokemonHasFlashInParty(player, payload.pokemonId());
+                boolean canFlash = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"flash");
                 System.out.println(canFlash + " variabile bool flash nel pokemon");
 
                     ServerPlayNetworking.send(player, new FlashMenuS2CPacket(canFlash));
@@ -196,7 +194,7 @@ public class ModNetworking {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 // ✅ Usa payload.pokemonId() perché è un record
-                boolean canFly = PartyUtils.pokemonHasFlyInParty(player, payload.pokemonId());
+                boolean canFly = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"fly");
                 System.out.println(canFly + " variabile bool fly nel pokemon");
 
                 // Invia pacchetto S2C
@@ -211,7 +209,7 @@ public class ModNetworking {
         ServerPlayNetworking.registerGlobalReceiver(FlyPacketC2S.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
-                if (!PartyUtils.hasFly(player)) {
+                if (!PartyUtils.hasMove(player,"fly")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Fly!"), false);
                     return;
                 }
@@ -245,7 +243,7 @@ public class ModNetworking {
             context.server().execute(() -> {
                 BlockPos pos = payload.pos();
 
-                if (!PartyUtils.hasRockSmash(player)) {
+                if (!PartyUtils.hasMove(player,"rocksmash")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Rock Smash!"), false);
                     return;
                 }
@@ -330,7 +328,7 @@ public class ModNetworking {
             context.server().execute(() -> {
                 BlockPos pos = payload.pos();
 
-                if (!PartyUtils.hasCut(player)) {
+                if (!PartyUtils.hasMove(player,"cut")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Cut!"), false);
                     return;
                 }
@@ -379,7 +377,7 @@ public class ModNetworking {
             context.server().execute(() -> {
                 BlockPos clickedPos = payload.pos();
 
-                if (!PartyUtils.hasStrength(player)) {
+                if (!PartyUtils.hasMove(player,"strength")) {
                     player.sendMessage(Text.literal("❌ No Pokémon in your party knows Strength!"), false);
                     return;
                 }

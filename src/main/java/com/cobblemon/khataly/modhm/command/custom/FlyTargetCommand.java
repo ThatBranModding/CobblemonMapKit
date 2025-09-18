@@ -46,6 +46,7 @@ public class FlyTargetCommand {
                                     ServerCommandSource source = context.getSource();
                                     ServerPlayerEntity player = source.getPlayer();
                                     String name = StringArgumentType.getString(context, "name");
+                                    assert player != null;
                                     BlockPos pos = player.getBlockPos();
 
                                     boolean success = FlyTargetManager.addTarget(name, player.getServerWorld().getRegistryKey(), pos);
@@ -96,11 +97,12 @@ public class FlyTargetCommand {
                                         return 0;
                                     }
 
-                                    if (!PartyUtils.hasFly(player)) {
+                                    if (!PartyUtils.hasMove(player,"fly")) {
                                         source.sendMessage(Text.literal("§cNo Pokémon in your party knows Fly."));
                                         return 0;
                                     }
 
+                                    assert player != null;
                                     player.teleport(
                                             player.getServerWorld(),
                                             target.pos.getX() + 0.5,

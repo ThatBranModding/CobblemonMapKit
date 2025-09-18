@@ -1,7 +1,6 @@
 package com.cobblemon.khataly.modhm.event.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
-import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.packet.*;
 import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
