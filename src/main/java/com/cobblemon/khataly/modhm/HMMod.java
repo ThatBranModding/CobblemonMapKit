@@ -5,6 +5,7 @@ import com.cobblemon.khataly.modhm.block.ModBlocks;
 import com.cobblemon.khataly.modhm.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.modhm.command.ModCommands;
 import com.cobblemon.khataly.modhm.config.ModConfig;
+import com.cobblemon.khataly.modhm.event.server.ServerEventHandler;
 import com.cobblemon.khataly.modhm.item.ModItemGroups;
 import com.cobblemon.khataly.modhm.item.ModItems;
 import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
@@ -34,10 +35,12 @@ public class HMMod implements ModInitializer {
         ModItems.registerModItems();
         ModBlocks.registerModBlocks();
         ModItemGroups.registerItemGroups();
+        ServerEventHandler.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ModCommands.register(dispatcher);
         });
         ServerTickEvents.END_SERVER_TICK.register(ModNetworking::tick);
+
 
 
         LOGGER.info("Hello Fabric world!");

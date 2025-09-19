@@ -1,6 +1,6 @@
 package com.cobblemon.khataly.modhm.screen.custom;
 
-import com.cobblemon.khataly.modhm.networking.packet.FlyMenuS2CPacket;
+import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
 import com.cobblemon.khataly.modhm.networking.packet.FlyPacketC2S;
 import com.cobblemon.khataly.modhm.widget.SimpleButton;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -8,34 +8,34 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 
-import java.util.List;
+import java.util.Map;
 
 public class FlyTargetListScreen extends Screen {
 
-    private final List<FlyMenuS2CPacket.FlyTargetEntry> targets;
-
-    public FlyTargetListScreen(MutableText title, List<FlyMenuS2CPacket.FlyTargetEntry> targets) {
+    public FlyTargetListScreen(MutableText title) {
         super(title);
-        this.targets = targets;
     }
 
     @Override
     protected void init() {
         int y = 40;
+        Map<String, FlyTargetConfig.TargetInfo> targets = FlyTargetConfig.getAllTargets();
 
-        // Mostra tutti i target ricevuti dal server
-        for (FlyMenuS2CPacket.FlyTargetEntry entry : targets) {
+        for (Map.Entry<String, FlyTargetConfig.TargetInfo> entry : targets.entrySet()) {
+            String name = entry.getKey();
+            BlockPos pos = entry.getValue().pos;
+
             this.addDrawableChild(new SimpleButton(
                     this.width / 2 - 100,
                     y,
                     200,
                     20,
-                    Text.literal(entry.name() + " @ " + entry.pos().toShortString()),
+                    Text.literal(name + " @ " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()),
                     button -> {
-                        ClientPlayNetworking.send(new FlyPacketC2S(entry.pos()));
-                        assert client != null;
-                        client.setScreen(null);
+                        ClientPlayNetworking.send(new FlyPacketC2S(pos));
+                        MinecraftClient.getInstance().setScreen(null);
                     }
             ));
             y += 25;

@@ -64,30 +64,12 @@ public class ModNetworking {
     }
 
     public static void registerC2SPackets() {
-        registerShowFlyMenuHandler();
-        registerShowTeleportMenuHandler();
         registerRockSmashHandler();
         registerCutHandler();
         registerStrengthHandler();
         registerFlyHandler();
-        registerShowFlashMenuHandler();
         registerTeleportHandler();
         registerFlashHandler();
-    }
-
-    private static void registerShowTeleportMenuHandler() {
-        ServerPlayNetworking.registerGlobalReceiver(TeleportMenuC2SPacket.ID, (payload, context) -> {
-            System.out.println("Receiver TeleportMenuC2SPacket registrato");
-            ServerPlayerEntity player = context.player();
-            context.server().execute(() -> {
-                // ✅ Usa payload.pokemonId() perché è un record
-                boolean cantp = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"teleport");
-                System.out.println(cantp + " variabile bool tp nel pokemon");
-
-                // Invia pacchetto S2C
-                ServerPlayNetworking.send(player, TeleportMenuS2CPacket.fromServerData(payload.pokemonId(), cantp));
-            });
-        });
     }
 
     private static void registerTeleportHandler() {
@@ -171,42 +153,6 @@ public class ModNetworking {
             });
         });
     }
-
-
-
-    private static void registerShowFlashMenuHandler() {
-        ServerPlayNetworking.registerGlobalReceiver(FlashMenuC2SPacket.ID, (payload, context) -> {
-            System.out.println("Receiver FlashMenuC2SPacket registrato");
-            ServerPlayerEntity player = context.player();
-            context.server().execute(() -> {
-                // ✅ Usa payload.pokemonId() perché è un record
-                boolean canFlash = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(),"flash");
-                System.out.println(canFlash + " variabile bool flash nel pokemon");
-
-                ServerPlayNetworking.send(player, FlashMenuS2CPacket.fromServerData(payload.pokemonId(), canFlash));
-
-            });
-        });
-    }
-
-    private static void registerShowFlyMenuHandler() {
-        ServerPlayNetworking.registerGlobalReceiver(FlyMenuC2SPacket.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
-            context.server().execute(() -> {
-                boolean canFly = PartyUtils.pokemonHasMoveToGUI(player, payload.pokemonId(), "fly");
-
-                // Prende tutti i target dal server
-                var targets = FlyTargetConfig.getAllTargets();
-
-                // Invia pacchetto completo al client con UUID del Pokémon
-                ServerPlayNetworking.send(player, FlyMenuS2CPacket.fromServerData(payload.pokemonId(), canFly, targets));
-            });
-        });
-    }
-
-
-
-
 
     private static void registerFlyHandler() {
         ServerPlayNetworking.registerGlobalReceiver(FlyPacketC2S.ID, (payload, context) -> {
@@ -369,7 +315,7 @@ public class ModNetworking {
                         20
                 ));
 
-                LOGGER.info("Block removed at " + pos + ", restore timer started");
+                LOGGER.info("Block removed at {}, restore timer started", pos);
             });
         });
     }
@@ -494,7 +440,7 @@ public class ModNetworking {
             world.setBlockState(originalPos, timedBlock.blockState);
             currentToOriginal.remove(originalPos);
 
-            LOGGER.info("Block restored at " + originalPos);
+            LOGGER.info("Block restored at {}", originalPos);
             return true; // rimuovi dalla mappa blocksToRestore
         });
     }
