@@ -10,6 +10,7 @@ import com.cobblemon.mod.common.api.reactive.EventObservable;
 import com.cobblemon.mod.common.client.gui.interact.wheel.InteractWheelOption;
 import kotlin.Unit;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -74,14 +75,13 @@ public class TeleportMenuOption {
 
     /** Resetta il flag quando si chiude la GUI di interazione */
     private static void registerGUICloseListener() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.execute(() -> {
-            mc.setScreen(new Screen(Text.literal("")) {
-                @Override
-                public void removed() {
+        // Intercetta tutte le schermate rimosse
+        MinecraftClient.getInstance().execute(() -> {
+            assert MinecraftClient.getInstance().currentScreen != null;
+            ScreenEvents.remove(MinecraftClient.getInstance().currentScreen).register(screen -> {
+                if (screen.getClass().getSimpleName().equals("PokemonInteractionScreen")) {
                     canAddTeleportOption = false;
-                    super.removed();
-                    System.out.println("[FlashMenuOption] Flag canAddTeleportOption resettato");
+                    System.out.println("[TeleportMenuOption] Flag canAddTeleportOption resettato");
                 }
             });
         });

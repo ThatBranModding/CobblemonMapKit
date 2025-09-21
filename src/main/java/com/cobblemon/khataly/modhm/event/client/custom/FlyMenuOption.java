@@ -12,6 +12,7 @@ import com.cobblemon.mod.common.api.events.pokemon.interaction.PokemonInteractio
 import com.cobblemon.mod.common.api.reactive.EventObservable;
 import com.cobblemon.mod.common.client.gui.interact.wheel.InteractWheelOption;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -48,44 +49,45 @@ public class FlyMenuOption {
     private static void registerGUIEvent() {
         EventObservable<PokemonInteractionGUICreationEvent> observable = CobblemonEvents.POKEMON_INTERACTION_GUI_CREATION; observable
                 .subscribe(Priority.NORMAL, event -> {
-            if (!canAddFlyOption) return null;
+                    if (!canAddFlyOption) return null;
 
-            Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/fly/icon_fly.png");
-            String tooltip = "Fly";
+                    Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/fly/icon_fly.png");
+                    String tooltip = "Fly";
 
-            kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
+                    kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
 
-            kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
-                MinecraftClient mc = MinecraftClient.getInstance();
+                    kotlin.jvm.functions.Function0<Unit> onPressFunc = () -> {
+                        MinecraftClient mc = MinecraftClient.getInstance();
 
-                // Ricezione animazione dal server
-                ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
-                    mc.execute(() -> mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon())));
+                        // Ricezione animazione dal server
+                        ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, context) -> {
+                            mc.execute(() -> mc.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon())));
+                        });
+
+                        // Mostra menu Fly
+                        mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("FLY Menu"),targets)));
+                        return Unit.INSTANCE;
+                    };
+
+                    InteractWheelOption option = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
+                    event.addFillingOption(option);
+                    return Unit.INSTANCE;
                 });
-
-                // Mostra menu Fly
-                mc.execute(() -> mc.setScreen(new FlyTargetListScreen(Text.literal("FLY Menu"),targets)));
-                return Unit.INSTANCE;
-            };
-
-            InteractWheelOption option = new InteractWheelOption(icon, null, tooltip, colourFunc, onPressFunc);
-            event.addFillingOption(option);
-            return Unit.INSTANCE;
-        });
     }
 
     /** Resetta il flag quando si chiude la GUI di interazione */
+
     private static void registerGUICloseListener() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.execute(() -> {
-            mc.setScreen(new Screen(Text.literal("")) {
-                @Override
-                public void removed() {
+        // Intercetta tutte le schermate rimosse
+        MinecraftClient.getInstance().execute(() -> {
+            assert MinecraftClient.getInstance().currentScreen != null;
+            ScreenEvents.remove(MinecraftClient.getInstance().currentScreen).register(screen -> {
+                if (screen.getClass().getSimpleName().equals("PokemonInteractionScreen")) {
                     canAddFlyOption = false;
-                    super.removed();
                     System.out.println("[FlyMenuOption] Flag canAddFlyOption resettato");
                 }
             });
         });
     }
+
 }
