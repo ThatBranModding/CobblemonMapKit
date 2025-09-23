@@ -2,6 +2,7 @@ package com.cobblemon.khataly.modhm.block;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.block.custom.BreakableRock;
+import com.cobblemon.khataly.modhm.block.custom.ClimbableRock;
 import com.cobblemon.khataly.modhm.block.custom.CuttableTree;
 import com.cobblemon.khataly.modhm.block.custom.MovableRock;
 import net.minecraft.block.AbstractBlock;
@@ -26,6 +27,11 @@ public class ModBlocks {
 
     public static final Block MOVABLE_ROCK = registerBlock("movable_rock",
             new MovableRock(AbstractBlock.Settings.create()
+                    .strength(-1.0F, 3600000.0F)
+                    .nonOpaque()));
+
+    public static final Block CLIMBABLE_ROCK = registerBlock("climbable_rock",
+            new ClimbableRock(AbstractBlock.Settings.create()
                     .strength(-1.0F, 3600000.0F)
                     .nonOpaque()));
 

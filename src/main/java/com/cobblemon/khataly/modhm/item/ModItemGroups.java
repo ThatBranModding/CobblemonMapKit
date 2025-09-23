@@ -20,6 +20,7 @@ public class ModItemGroups {
                         entries.add(ModBlocks.BREAKABLE_ROCK);
                         entries.add(ModBlocks.CUTTABLE_TREE);
                         entries.add(ModBlocks.MOVABLE_ROCK);
+                        entries.add(ModBlocks.CLIMBABLE_ROCK);
                     }).build());
 
     public static void registerItemGroups(){

@@ -10,6 +10,7 @@ public class ModSounds {
     public static final SoundEvent BREAKABLE_ROCK = registerSoundEvent("breakable_rock");
     public static final SoundEvent CUTTABLE_TREE = registerSoundEvent("cuttable_tree");
     public static final SoundEvent MOVABLE_ROCK = registerSoundEvent("movable_rock");
+    public static final SoundEvent CLIMBABLE_ROCK = registerSoundEvent("climbable_rock");
     public static final SoundEvent WALL_BUMP = registerSoundEvent("wall_bump");
     public static final SoundEvent TELEPORT = registerSoundEvent("teleport");
     public static final SoundEvent FLY = registerSoundEvent("fly");

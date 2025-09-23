@@ -35,6 +35,12 @@
       "modhm:wall_bump"
     ]
   },
+  "climbable_rock": {
+    "subtitles": "sounds.modhm.climbable_rock",
+    "sounds": [
+      "modhm:climbable_rock"
+    ]
+  },
   "movable_rock": {
     "subtitles": "sounds.modhm.movable_rock",
     "sounds": [

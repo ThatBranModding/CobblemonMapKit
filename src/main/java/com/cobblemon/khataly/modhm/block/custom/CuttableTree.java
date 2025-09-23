@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class CuttableTree extends BlockWithEntity implements BlockEntityProvider {
 
-    public static final MapCodec<BreakableRock> CODEC = BreakableRock.createCodec(BreakableRock::new);
+    public static final MapCodec<CuttableTree> CODEC = CuttableTree.createCodec(CuttableTree::new);
     private static final VoxelShape SHAPE =
             Block.createCuboidShape(0, 0, 0, 16, 32, 16);
 

@@ -2,6 +2,7 @@
   "block.modhm.breakable_rock": "Breakable Rock",
   "block.modhm.cuttable_tree": "Cuttable Tree",
   "block.modhm.movable_rock": "Movable Rock",
+  "block.modhm.climbable_rock": "Climbable Rock",
 
   "itemgroup.modhm.modhm_group": "HM Mod Group"
 }
