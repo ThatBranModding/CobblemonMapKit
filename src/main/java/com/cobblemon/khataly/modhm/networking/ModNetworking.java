@@ -187,14 +187,14 @@ public class ModNetworking {
             });
         });
     }
-    // Mappa dei giocatori che stanno scalando -> posizione iniziale della scalata
+    // --- Variabili globali per la scalata ---
     private static final Map<ServerPlayerEntity, BlockPos> playersClimbing = new ConcurrentHashMap<>();
-    // Conta i tick trascorsi dall’inizio della scalata
     private static final Map<ServerPlayerEntity, Integer> climbingTicks = new ConcurrentHashMap<>();
-    // Giocatori che hanno già sentito il suono
+    private static final Map<ServerPlayerEntity, Set<BlockPos>> visitedClimbBlocks = new ConcurrentHashMap<>();
+    private static final Map<ServerPlayerEntity, BlockPos> climbingTargets = new ConcurrentHashMap<>();
     private static final Set<ServerPlayerEntity> playersPlayingSound = ConcurrentHashMap.newKeySet();
 
-    // Registrazione pacchetto Rock Climb
+    // --- Registrazione pacchetto Rock Climb ---
     private static void registerRockClimbHandler() {
         ServerPlayNetworking.registerGlobalReceiver(RockClimbPacketC2S.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
@@ -422,13 +422,13 @@ public class ModNetworking {
 
 
 
-    private static final Map<ServerPlayerEntity, BlockPos> climbingTargets = new ConcurrentHashMap<>();
-    private static final Map<ServerPlayerEntity, Set<BlockPos>> visitedClimbBlocks = new ConcurrentHashMap<>();
+
+
 
     public static void tick(MinecraftServer server) {
         ServerWorld world = server.getOverworld();
 
-        // --- 1️⃣ Gestione blocchi da ripristinare (come prima) ---
+        // --- 1️⃣ Gestione blocchi da ripristinare ---
         blocksToRestore.entrySet().removeIf(entry -> {
             BlockPos originalPos = entry.getKey();
             TimedBlock timedBlock = entry.getValue();
@@ -473,10 +473,10 @@ public class ModNetworking {
             return true;
         });
 
-        // --- 2️⃣ Gestione scalata giocatori (step-by-step) ---
+        // --- 2️⃣ Gestione scalata giocatori (su e giù) ---
         playersClimbing.forEach((player, startPos) -> {
             if (!player.isAlive()) {
-                // cleanup
+                // Cleanup
                 playersClimbing.remove(player);
                 climbingTicks.remove(player);
                 playersPlayingSound.remove(player);
@@ -487,20 +487,17 @@ public class ModNetworking {
 
             climbingTicks.put(player, climbingTicks.getOrDefault(player, 0) + 1);
 
-            // inizializza visited set per il player (se non esiste)
+            // Inizializza set di blocchi visitati
             visitedClimbBlocks.putIfAbsent(player, new HashSet<>());
             Set<BlockPos> visited = visitedClimbBlocks.get(player);
-
-            // se è la prima iterazione, marca la posizione di partenza come visitata
             visited.add(startPos);
 
-            // prendi target corrente o calcolane uno nuovo
+            // Prendi target o calcolane uno nuovo
             BlockPos target = climbingTargets.get(player);
             if (target == null) {
                 target = findNextClimbStep(world, startPos, visited);
                 if (target == null) {
-                    // niente da scalare
-                    player.sendMessage(Text.literal("⚠️ No climbable blocks found!"), false);
+                    player.sendMessage(Text.literal("🧗 No climbable blocks!"), false);
                     playersClimbing.remove(player);
                     climbingTicks.remove(player);
                     playersPlayingSound.remove(player);
@@ -512,22 +509,29 @@ public class ModNetworking {
                 visited.add(target);
             }
 
-            // direzione verso il target (arrivare sopra il blocco)
+            // Movimento verso target
             double dx = target.getX() + 0.5 - player.getX();
-            double dy = target.getY() + 1.0 - player.getY(); // salire sopra il blocco
+            double dy = target.getY() + 1.0 - player.getY();
             double dz = target.getZ() + 0.5 - player.getZ();
             double distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
             if (distance < 0.2) {
-                // raggiunto il target: trova prossimo passo partendo da 'target'
+                // Raggiunto target: calcola prossimo passo
                 BlockPos next = findNextClimbStep(world, target, visited);
                 if (next == null) {
-                    // fine scalata: aggiungi una spinta finale verso l'alto
-                    double finalBoost = 0.2; // quanto vuoi salire sopra la cima
+                    // Fine scalata, boost finale su o giù
+                    double finalBoost = dy > 0 ? 0.2 : -0.2;
                     player.setVelocity(0, finalBoost, 0);
                     player.velocityModified = true;
-                    player.sendMessage(Text.literal("🧗 You climbed to the top of the rock!"), false);
 
+                    // Messaggio basato sulla direzione
+                    if (dy > 0) {
+                        player.sendMessage(Text.literal("🧗 You climbed up!"), false);
+                    } else {
+                        player.sendMessage(Text.literal("🧗 You climbed down!"), false);
+                    }
+
+                    // Cleanup
                     playersClimbing.remove(player);
                     climbingTicks.remove(player);
                     playersPlayingSound.remove(player);
@@ -540,16 +544,15 @@ public class ModNetworking {
                 return;
             }
 
-            // muovi verso il target
+            // Muovi verso target
             double speed = 0.15;
             double vx = dx / distance * speed;
             double vy = dy / distance * speed;
             double vz = dz / distance * speed;
-
             player.setVelocity(vx, vy, vz);
             player.velocityModified = true;
 
-            // avvia suono dopo delay
+            // Suono dopo delay
             int tickDelay = 4;
             if (climbingTicks.get(player) >= tickDelay && !playersPlayingSound.contains(player)) {
                 player.playSoundToPlayer(ModSounds.CLIMBABLE_ROCK, SoundCategory.PLAYERS, 1f, 1f);
@@ -558,54 +561,54 @@ public class ModNetworking {
         });
     }
 
-    /**
-     * Cerca il prossimo blocco CLIMBABLE_ROCK adiacente da scalare.
-     * - Priorità: UP immediato
-     * - Poi il vicino orizzontale che consente di raggiungere la Y più alta (scansione verticale)
-     * - Poi qualsiasi vicino non visitato
-     */
+    // --- Funzione per trovare il prossimo blocco climbabile ---
     private static BlockPos findNextClimbStep(ServerWorld world, BlockPos from, Set<BlockPos> visited) {
         BlockState state = world.getBlockState(from);
-        if (!state.isOf(ModBlocks.CLIMBABLE_ROCK)) return null;
 
-        // recupera la direzione del blocco (su quale lato del muro è piazzato)
-        Direction facing = state.get(ClimbableRock.FACING);
-
-        // 1) subito sopra (stesso X,Z)
+        // --- 1️⃣ Controlla sopra (salita) ---
         BlockPos up = from.up();
-        if (!visited.contains(up) && world.getBlockState(up).isOf(ModBlocks.CLIMBABLE_ROCK)) {
+        if (!visited.contains(up) && state.isOf(ModBlocks.CLIMBABLE_ROCK) && world.getBlockState(up).isOf(ModBlocks.CLIMBABLE_ROCK)) {
             return up;
         }
 
-        // 2) sopra + avanti (rispetto al facing del blocco)
-        BlockPos upForward = from.up().offset(facing);
-        if (!visited.contains(upForward) && world.getBlockState(upForward).isOf(ModBlocks.CLIMBABLE_ROCK)) {
-            return upForward;
+        if (state.isOf(ModBlocks.CLIMBABLE_ROCK)) {
+            Direction facing = state.get(ClimbableRock.FACING);
+
+            BlockPos upForward = up.offset(facing);
+            if (!visited.contains(upForward) && world.getBlockState(upForward).isOf(ModBlocks.CLIMBABLE_ROCK))
+                return upForward;
+
+            BlockPos upBackward = up.offset(facing.getOpposite());
+            if (!visited.contains(upBackward) && world.getBlockState(upBackward).isOf(ModBlocks.CLIMBABLE_ROCK))
+                return upBackward;
         }
 
-        // 3) sopra + indietro (lato opposto)
-        BlockPos upBackward = from.up().offset(facing.getOpposite());
-        if (!visited.contains(upBackward) && world.getBlockState(upBackward).isOf(ModBlocks.CLIMBABLE_ROCK)) {
-            return upBackward;
+        // --- 2️⃣ Controlla sotto (discesa) ---
+        BlockPos down = from.down();
+        if (!visited.contains(down) && world.getBlockState(down).isOf(ModBlocks.CLIMBABLE_ROCK)) return down;
+
+        if (state.isOf(ModBlocks.CLIMBABLE_ROCK)) {
+            Direction facing = state.get(ClimbableRock.FACING);
+
+            BlockPos downForward = down.offset(facing);
+            if (!visited.contains(downForward) && world.getBlockState(downForward).isOf(ModBlocks.CLIMBABLE_ROCK))
+                return downForward;
+
+            BlockPos downBackward = down.offset(facing.getOpposite());
+            if (!visited.contains(downBackward) && world.getBlockState(downBackward).isOf(ModBlocks.CLIMBABLE_ROCK))
+                return downBackward;
         }
 
-        // 4) fallback → vicini orizzontali (come avevi già fatto)
-        Direction[] horizontals = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST };
+        // --- 3️⃣ Controlla vicini orizzontali ---
+        Direction[] horizontals = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
         for (Direction dir : horizontals) {
             BlockPos n = from.offset(dir);
-            if (!visited.contains(n) && world.getBlockState(n).isOf(ModBlocks.CLIMBABLE_ROCK)) {
-                return n;
-            }
+            if (!visited.contains(n) && world.getBlockState(n).isOf(ModBlocks.CLIMBABLE_ROCK)) return n;
         }
 
-        // niente trovato
+        // Nessun blocco climbabile trovato
         return null;
     }
-
-
-
-
-
 
     private static class TimedBlock {
         final BlockState blockState;
