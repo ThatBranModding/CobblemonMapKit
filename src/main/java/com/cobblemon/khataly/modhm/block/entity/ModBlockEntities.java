@@ -2,10 +2,7 @@ package com.cobblemon.khataly.modhm.block.entity;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.block.ModBlocks;
-import com.cobblemon.khataly.modhm.block.entity.custom.BreakableRockEntity;
-import com.cobblemon.khataly.modhm.block.entity.custom.ClimbableRockEntity;
-import com.cobblemon.khataly.modhm.block.entity.custom.CuttableTreeEntity;
-import com.cobblemon.khataly.modhm.block.entity.custom.MovableRockEntity;
+import com.cobblemon.khataly.modhm.block.entity.custom.*;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -29,6 +26,9 @@ public class ModBlockEntities {
             Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of(HMMod.MOD_ID, "climbable_rock_be"),
                     BlockEntityType.Builder.create(ClimbableRockEntity::new, ModBlocks.CLIMBABLE_ROCK).build(null));
 
+    public static final BlockEntityType<UltraHolePortalEntity> ULTRAHOLE_ROCK_BE =
+            Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of(HMMod.MOD_ID, "ultrahole_rock_be"),
+                    BlockEntityType.Builder.create(UltraHolePortalEntity::new, ModBlocks.ULTRAHOLE_PORTAL).build(null));
     public static void registerBlockEntities() {
         HMMod.LOGGER.info("Registering Block Entities for " + HMMod.MOD_ID);
     }

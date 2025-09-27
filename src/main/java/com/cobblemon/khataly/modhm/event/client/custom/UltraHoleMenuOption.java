@@ -44,7 +44,7 @@ public class UltraHoleMenuOption {
                     if (!canAddUltraHoleOption) return null;
 
                     Identifier icon = Identifier.of(HMMod.MOD_ID, "textures/gui/ultraholes/icon_ultraholes.png");
-                    String tooltip = "UltraHole";
+                    String tooltip = "UltraWormhole";
 
                     kotlin.jvm.functions.Function0<Vector3f> colourFunc = () -> new Vector3f(1f, 1f, 1f);
 

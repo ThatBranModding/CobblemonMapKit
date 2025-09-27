@@ -2,6 +2,7 @@ package com.cobblemon.khataly.modhm.networking;
 
 import com.cobblemon.khataly.modhm.block.ModBlocks;
 import com.cobblemon.khataly.modhm.block.custom.ClimbableRock;
+import com.cobblemon.khataly.modhm.block.entity.custom.UltraHolePortalEntity;
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.packet.*;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
@@ -22,17 +23,13 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,66 +82,82 @@ public class ModNetworking {
         registerUltraHoleHandler();
     }
 
+    private static final Map<UUID, BlockPos> activePortals = new HashMap<>();
     private static void registerUltraHoleHandler() {
         ServerPlayNetworking.registerGlobalReceiver(UltraHolePacketC2S.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
 
-                // Lista delle mosse richieste per usare UltraHole
+                // --- Controllo mosse ---
                 List<String> ultraHoleMoves = List.of("sunsteelstrike", "moongeistbeam");
                 List<String> knownMoves = ultraHoleMoves.stream()
                         .filter(move -> PlayerUtils.hasMove(player, move))
                         .toList();
-
                 if (knownMoves.isEmpty()) {
                     player.sendMessage(Text.literal("❌ None of your Pokémon know the moves required to open an UltraHole!"), false);
-                    player.sendMessage(Text.literal("Required moves: Sunsteel Strike or Moongeist Beam"), false);
                     return;
                 }
 
-                if (ModConfig.ULTRAHOLE.item != null &&
-                        !PlayerUtils.hasRequiredItem(player, ModConfig.ULTRAHOLE.item)) {
+                // --- Controllo item ---
+                if (ModConfig.ULTRAHOLE.item != null && !PlayerUtils.hasRequiredItem(player, ModConfig.ULTRAHOLE.item)) {
                     player.sendMessage(Text.literal(ModConfig.ULTRAHOLE.message), false);
                     return;
                 }
 
-                // --- Determina la dimensione di destinazione ---
-                String destDimensionId = ModConfig.ULTRAHOLE_SETTINGS.destinationDimension;
-
-                // Se il giocatore è già nella destinazione, torna nell'Overworld
-                if (player.getWorld().getRegistryKey().getValue().toString().equals(destDimensionId)) {
-                    destDimensionId = "minecraft:overworld";
-                }
-
-                Identifier dimIdentifier = Identifier.tryParse(destDimensionId);
-                if (dimIdentifier == null) {
-                    player.sendMessage(Text.literal("❌ Invalid dimension ID in config!"), false);
+                // --- Controllo se il giocatore ha già un portale ---
+                if (activePortals.containsKey(player.getUuid())) {
+                    player.sendMessage(Text.literal("⚠️ You already have an active UltraHole portal!"), false);
                     return;
                 }
 
-                RegistryKey<World> targetWorldKey = RegistryKey.of(RegistryKeys.WORLD, dimIdentifier);
-                ServerWorld targetWorld = Objects.requireNonNull(player.getServer()).getWorld(targetWorldKey);
-                if (targetWorld == null) {
-                    player.sendMessage(Text.literal("❌ Target dimension not found!"), false);
-                    return;
+                // --- Calcola posizione portale davanti al giocatore ---
+                int distance = 5;
+                BlockPos portalPos = player.getBlockPos().offset(player.getHorizontalFacing(), distance);
+
+                // --- Posa il portale ---
+                player.getWorld().setBlockState(portalPos, ModBlocks.ULTRAHOLE_PORTAL.getDefaultState());
+
+                // --- Configura BlockEntity ---
+                var blockEntity = player.getWorld().getBlockEntity(portalPos);
+                if (blockEntity instanceof UltraHolePortalEntity portalEntity) {
+                    String currentDimension = player.getWorld().getRegistryKey().getValue().toString();
+                    String targetDimensionConfig = ModConfig.ULTRAHOLE_SETTINGS.destinationDimension;
+
+                    if (currentDimension.equals(targetDimensionConfig)) {
+                        // Sei nella destinazione → torna allo spawn dell'Overworld
+                        BlockPos spawn = Objects.requireNonNull(player.getServer()).getOverworld().getSpawnPos();
+                        portalEntity.setTarget(
+                                "minecraft:overworld",
+                                spawn.getX() + 0.5,
+                                spawn.getY(),
+                                spawn.getZ() + 0.5
+                        );
+                    } else {
+                        // Sei nell'Overworld → vai alla destinazione configurata
+                        portalEntity.setTarget(
+                                targetDimensionConfig,
+                                ModConfig.ULTRAHOLE_SETTINGS.x,
+                                ModConfig.ULTRAHOLE_SETTINGS.y,
+                                ModConfig.ULTRAHOLE_SETTINGS.z
+                        );
+                    }
+
+                    // --- Callback per rimuovere dalla mappa quando il portale sparisce ---
+                    portalEntity.setOnRemove(() -> activePortals.remove(player.getUuid()));
+                    activePortals.put(player.getUuid(), portalPos);
                 }
-
-                // Prendi la prima mossa valida
-                String chosenMove = knownMoves.getFirst();
-                RenderablePokemon renderablePokemon = PlayerUtils.getRenderPokemonByMove(player, chosenMove);
-                if (renderablePokemon != null) {
-                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
-                }
-
-                // --- Teletrasporto alle coordinate configurate ---
-                double x = ModConfig.ULTRAHOLE_SETTINGS.x;
-                double y = ModConfig.ULTRAHOLE_SETTINGS.y;
-                double z = ModConfig.ULTRAHOLE_SETTINGS.z;
-
-                player.teleport(targetWorld, x, y, z, player.getYaw(), player.getPitch());
             });
         });
     }
+
+
+
+
+
+
+
+
+
 
 
 

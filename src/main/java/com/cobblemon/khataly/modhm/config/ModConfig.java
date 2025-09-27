@@ -38,8 +38,8 @@ public class ModConfig {
     public static RequiredItem ROCKCLIMB = new RequiredItem(null, "❌ You need climbing gear to use Rock Climb!");
     public static RequiredItem ULTRAHOLE = new RequiredItem(null, "❌ You need Ultrabeast to summon a Ultra Hole!");
 
-    // --- UltraHole settings ---
-    public static UltraHoleSettings ULTRAHOLE_SETTINGS = new UltraHoleSettings("minecraft:the_end", 0, 100, 0); // default dimension and coordinates
+    // --- UltraHole default settings ---
+    public static UltraHoleSettings ULTRAHOLE_SETTINGS = new UltraHoleSettings("minecraft:the_end", 0, 100, 0, 200); // default durata 200 tick
 
     // --- Load config from JSON ---
     public static void load() {
@@ -56,7 +56,7 @@ public class ModConfig {
                     !jsonContent.contains("\"required_items\"") ||
                     !jsonContent.contains("\"ultrahole_settings\"")) {
 
-                LOGGER.warn("⚠️ Config obsolete or corrupted, regenerating with default values.");
+                LOGGER.warn("⚠️ Config obsolete or corrupted, regenerating con valori di default.");
                 if (!CONFIG_FILE.delete()) LOGGER.error("⚠️ Cannot delete config file: {}", CONFIG_FILE.getAbsolutePath());
                 save();
                 return;
@@ -79,7 +79,7 @@ public class ModConfig {
                     || data.ultrahole_settings.destinationDimension == null;
 
             if (missingItem) {
-                LOGGER.warn("⚠️ One or more RequiredItems or UltraHole settings missing, regenerating config.");
+                LOGGER.warn("⚠️ Uno o più RequiredItems o UltraHole settings mancanti, rigenero il config.");
                 if (!CONFIG_FILE.delete()) LOGGER.error("⚠️ Cannot delete config file: {}", CONFIG_FILE.getAbsolutePath());
                 save();
                 return;
@@ -180,25 +180,28 @@ public class ModConfig {
         RequiredItem ultrahole = null;
     }
 
-    // --- UltraHole settings with coordinates ---
+    // --- UltraHole settings with coordinates and duration ---
     public static class UltraHoleSettings {
-        public String destinationDimension; // dimension ID completo
-        public double x; // coordinata X
-        public double y; // coordinata Y
-        public double z; // coordinata Z
+        public String destinationDimension;
+        public double x;
+        public double y;
+        public double z;
+        public int durationTicks; // durata del portale in tick
 
         public UltraHoleSettings() {
             this.destinationDimension = "minecraft:the_end";
             this.x = 0;
             this.y = 100;
             this.z = 0;
+            this.durationTicks = 200;
         }
 
-        public UltraHoleSettings(String destinationDimension, double x, double y, double z) {
+        public UltraHoleSettings(String destinationDimension, double x, double y, double z, int durationTicks) {
             this.destinationDimension = destinationDimension;
             this.x = x;
             this.y = y;
             this.z = z;
+            this.durationTicks = durationTicks;
         }
     }
 }
