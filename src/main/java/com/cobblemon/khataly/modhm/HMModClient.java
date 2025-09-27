@@ -1,6 +1,8 @@
 package com.cobblemon.khataly.modhm;
 
 import com.cobblemon.khataly.modhm.block.ModBlocks;
+import com.cobblemon.khataly.modhm.block.entity.ModBlockEntities;
+import com.cobblemon.khataly.modhm.block.renderer.UltraHolePortalRenderer;
 import com.cobblemon.khataly.modhm.event.client.ClientEventHandler;
 import com.cobblemon.khataly.modhm.screen.ModScreenHandlers;
 import com.cobblemon.khataly.modhm.screen.custom.CutScreen;
@@ -11,6 +13,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 
 public class HMModClient implements ClientModInitializer {
 
@@ -23,6 +26,8 @@ public class HMModClient implements ClientModInitializer {
         HandledScreens.register(ModScreenHandlers.ROCKCLIMB_SCREEN_HANDLER, RockClimbScreen::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.CLIMBABLE_ROCK, RenderLayer.getCutout());
+
+        BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
         ClientEventHandler.register();
     }
 }

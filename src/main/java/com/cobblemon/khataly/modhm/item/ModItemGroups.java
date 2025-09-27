@@ -21,6 +21,7 @@ public class ModItemGroups {
                         entries.add(ModBlocks.CUTTABLE_TREE);
                         entries.add(ModBlocks.MOVABLE_ROCK);
                         entries.add(ModBlocks.CLIMBABLE_ROCK);
+                        entries.add(ModBlocks.ULTRAHOLE_PORTAL);
                     }).build());
 
     public static void registerItemGroups(){

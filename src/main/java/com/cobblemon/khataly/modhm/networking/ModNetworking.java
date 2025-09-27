@@ -150,18 +150,6 @@ public class ModNetworking {
         });
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void registerTeleportHandler() {
         ServerPlayNetworking.registerGlobalReceiver(TeleportPacketC2S.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();

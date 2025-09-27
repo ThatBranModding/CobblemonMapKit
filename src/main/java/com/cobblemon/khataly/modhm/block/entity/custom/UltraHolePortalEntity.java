@@ -25,21 +25,18 @@ public class UltraHolePortalEntity extends BlockEntity {
     private int lifetime;
     private String targetDimension;
     private double targetX, targetY, targetZ;
-
-    private Runnable onRemove; // callback quando il portale sparisce
+    private Runnable onRemove;
 
     public UltraHolePortalEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ULTRAHOLE_ROCK_BE, pos, state);
 
-        // Inizializza dai valori di config
         this.targetDimension = ModConfig.ULTRAHOLE_SETTINGS.destinationDimension;
         this.targetX = ModConfig.ULTRAHOLE_SETTINGS.x;
         this.targetY = ModConfig.ULTRAHOLE_SETTINGS.y;
         this.targetZ = ModConfig.ULTRAHOLE_SETTINGS.z;
-        this.lifetime = ModConfig.ULTRAHOLE_SETTINGS.durationTicks; // durata in tick
+        this.lifetime = ModConfig.ULTRAHOLE_SETTINGS.durationTicks;
     }
 
-    // Imposta destinazione
     public void setTarget(String dimension, double x, double y, double z) {
         this.targetDimension = dimension;
         this.targetX = x;
@@ -48,7 +45,6 @@ public class UltraHolePortalEntity extends BlockEntity {
         markDirty();
     }
 
-    // Imposta callback di rimozione
     public void setOnRemove(Runnable onRemove) {
         this.onRemove = onRemove;
     }
@@ -74,7 +70,7 @@ public class UltraHolePortalEntity extends BlockEntity {
     public void tick() {
         if (world == null || world.isClient) return;
 
-        // Cubo trigger del portale (1x2x1)
+        // Teletrasporto
         Box box = new Box(pos).expand(0.2, 0.2, 0.2);
         List<ServerPlayerEntity> playersInside = world.getEntitiesByClass(ServerPlayerEntity.class, box, p -> true);
 
@@ -86,7 +82,6 @@ public class UltraHolePortalEntity extends BlockEntity {
             double y = targetY;
             double z = targetZ;
 
-            // Se il target è l'Overworld, usa lo spawn point del giocatore
             if (targetWorld.getRegistryKey().getValue().toString().equals("minecraft:overworld")) {
                 BlockPos spawnPos = player.getSpawnPointPosition();
                 if (spawnPos == null) spawnPos = targetWorld.getSpawnPos();
@@ -101,9 +96,7 @@ public class UltraHolePortalEntity extends BlockEntity {
 
         // Riduci lifetime
         lifetime--;
-        if (lifetime <= 0) {
-            removePortal();
-        }
+        if (lifetime <= 0) removePortal();
     }
 
     @Override
