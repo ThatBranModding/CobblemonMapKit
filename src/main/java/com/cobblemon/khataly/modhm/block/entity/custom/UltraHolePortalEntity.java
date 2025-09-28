@@ -6,9 +6,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,19 +19,20 @@ import java.util.List;
 
 public class UltraHolePortalEntity extends BlockEntity {
 
-    private int lifetime;
+    private int lifetime; // Durata totale configurata
+    private int age;      // Tick dall'apparizione
     private String targetDimension;
     private double targetX, targetY, targetZ;
     private Runnable onRemove;
 
     public UltraHolePortalEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ULTRAHOLE_ROCK_BE, pos, state);
-
         this.targetDimension = ModConfig.ULTRAHOLE_SETTINGS.destinationDimension;
         this.targetX = ModConfig.ULTRAHOLE_SETTINGS.x;
         this.targetY = ModConfig.ULTRAHOLE_SETTINGS.y;
         this.targetZ = ModConfig.ULTRAHOLE_SETTINGS.z;
         this.lifetime = ModConfig.ULTRAHOLE_SETTINGS.durationTicks;
+        this.age = 0;
     }
 
     public void setTarget(String dimension, double x, double y, double z) {
@@ -48,6 +46,10 @@ public class UltraHolePortalEntity extends BlockEntity {
     public void setOnRemove(Runnable onRemove) {
         this.onRemove = onRemove;
     }
+
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
+    public int getLifetime() { return lifetime; }
 
     @Nullable
     public ServerWorld getTargetWorld(MinecraftServer server) {
@@ -69,6 +71,8 @@ public class UltraHolePortalEntity extends BlockEntity {
 
     public void tick() {
         if (world == null || world.isClient) return;
+
+        age++; // avanza il timer
 
         // Teletrasporto
         Box box = new Box(pos).expand(0.2, 0.2, 0.2);
@@ -94,9 +98,7 @@ public class UltraHolePortalEntity extends BlockEntity {
             removePortal();
         }
 
-        // Riduci lifetime
-        lifetime--;
-        if (lifetime <= 0) removePortal();
+        if (age >= lifetime) removePortal(); // rimuove portale alla fine del lifetime
     }
 
     @Override
@@ -107,6 +109,7 @@ public class UltraHolePortalEntity extends BlockEntity {
         nbt.putDouble("targetY", targetY);
         nbt.putDouble("targetZ", targetZ);
         nbt.putInt("lifetime", lifetime);
+        nbt.putInt("age", age);
     }
 
     @Override
@@ -117,16 +120,6 @@ public class UltraHolePortalEntity extends BlockEntity {
         targetY = nbt.getDouble("targetY");
         targetZ = nbt.getDouble("targetZ");
         lifetime = nbt.getInt("lifetime");
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientPlayPacketListener> toUpdatePacket() {
-        return BlockEntityUpdateS2CPacket.create(this);
-    }
-
-    @Override
-    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registryLookup) {
-        return createNbt(registryLookup);
+        age = nbt.getInt("age");
     }
 }

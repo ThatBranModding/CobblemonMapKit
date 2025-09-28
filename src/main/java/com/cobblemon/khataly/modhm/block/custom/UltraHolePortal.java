@@ -33,7 +33,7 @@ public class UltraHolePortal extends BlockWithEntity {
 
     @Override
     public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.MODEL; // Usa modello normale
+        return BlockRenderType.INVISIBLE; // Usa modello normale
     }
 
     @Override
@@ -58,7 +58,6 @@ public class UltraHolePortal extends BlockWithEntity {
             }
         }
     }
-
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
         if (world.isClient) return null; // Solo server
