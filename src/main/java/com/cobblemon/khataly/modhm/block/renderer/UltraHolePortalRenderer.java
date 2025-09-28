@@ -97,6 +97,20 @@ public class UltraHolePortalRenderer implements BlockEntityRenderer<UltraHolePor
             radius = minRadius;
         }
 
+        // ---- Ambience durante fase STABILE (ping ogni ~2s) ----
+        if (localAge >= growDuration && localAge < growDuration + stableDuration) {
+            if ((localAge % 40) == 0) {
+                float vol   = 0.25f;
+                float pitch = 0.90f + (RANDOM.nextFloat() - 0.5f) * 0.08f;
+                world.playSound(
+                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        SoundEvents.BLOCK_BEACON_AMBIENT,
+                        net.minecraft.sound.SoundCategory.AMBIENT,
+                        vol, pitch, false
+                );
+            }
+        }
+
         // =========================================================
         //        SUPERFICIE INTERNA (PIENA, NOISE-DRIVEN)
         // =========================================================
