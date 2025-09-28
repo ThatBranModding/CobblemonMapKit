@@ -109,6 +109,10 @@ public class ModNetworking {
                     player.sendMessage(Text.literal("⚠️ You already have an active UltraHole portal!"), false);
                     return;
                 }
+                RenderablePokemon renderablePokemon = PlayerUtils.getRenderPokemonByMove(player, knownMoves.getFirst());
+                if (renderablePokemon != null) {
+                    ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderablePokemon));
+                }
 
                 // --- Calcola posizione portale: 5 blocchi davanti + 1 blocco in alto ---
                 int distance = 5;
