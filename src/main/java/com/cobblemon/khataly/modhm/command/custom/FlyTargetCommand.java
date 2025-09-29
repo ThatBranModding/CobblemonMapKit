@@ -1,15 +1,23 @@
 package com.cobblemon.khataly.modhm.command.custom;
 
 import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
+import com.cobblemon.khataly.modhm.config.PlayerFlyProgress;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class FlyTargetCommand {
 
@@ -17,7 +25,7 @@ public class FlyTargetCommand {
         dispatcher.register(CommandManager.literal("flytarget")
                 .requires(source -> source.hasPermissionLevel(2))
 
-                // flytarget list
+                // /flytarget list
                 .then(CommandManager.literal("list")
                         .executes(context -> {
                             ServerCommandSource source = context.getSource();
@@ -39,7 +47,7 @@ public class FlyTargetCommand {
                         })
                 )
 
-                // flytarget create <name>
+                // /flytarget create <name>
                 .then(CommandManager.literal("create")
                         .then(CommandManager.argument("name", StringArgumentType.word())
                                 .executes(context -> {
@@ -63,9 +71,10 @@ public class FlyTargetCommand {
                         )
                 )
 
-                // flytarget remove <name>
+                // /flytarget remove <name>
                 .then(CommandManager.literal("remove")
                         .then(CommandManager.argument("name", StringArgumentType.word())
+                                .suggests(FlyTargetCommand::suggestTargets)
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
                                     String name = StringArgumentType.getString(context, "name");
@@ -82,7 +91,53 @@ public class FlyTargetCommand {
                         )
                 )
 
-                // flytarget reload
+                // /flytarget unlock <player> <name>
+                .then(CommandManager.literal("unlock")
+                        .then(CommandManager.argument("player", EntityArgumentType.player())
+                                .then(CommandManager.argument("name", StringArgumentType.word())
+                                        .suggests(FlyTargetCommand::suggestTargets)
+                                        .executes(context -> {
+                                            ServerCommandSource source = context.getSource();
+                                            ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
+                                            String name = StringArgumentType.getString(context, "name");
+                                            String keyLower = name.toLowerCase(Locale.ROOT);
+
+                                            Map<String, FlyTargetConfig.TargetInfo> all = FlyTargetConfig.getAllTargets();
+                                            if (!all.containsKey(keyLower)) {
+                                                source.sendMessage(Text.literal("§cFly target '" + name + "' does not exist."));
+                                                return 0;
+                                            }
+
+                                            boolean added = PlayerFlyProgress.unlock(targetPlayer.getUuid(), keyLower);
+                                            if (added) {
+                                                source.sendMessage(Text.literal("§aUnlocked fly target '§e" + name + "§a' for §b" + targetPlayer.getName().getString() + "§a."));
+                                                targetPlayer.sendMessage(Text.literal("§7[Admin] §fNow you can fly to " + pretty(name)), false);
+                                                return 1;
+                                            } else {
+                                                source.sendMessage(Text.literal("§ePlayer already had fly target '§e" + name + "§e' unlocked."));
+                                                return 1;
+                                            }
+                                        })
+                                )
+                        )
+                )
+
+                // /flytarget clear <player>
+                .then(CommandManager.literal("clear")
+                        .then(CommandManager.argument("player", EntityArgumentType.player())
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
+
+                                    PlayerFlyProgress.clearAll(targetPlayer.getUuid());
+                                    source.sendMessage(Text.literal("§aCleared all unlocked fly targets for §b" + targetPlayer.getName().getString() + "§a."));
+                                    targetPlayer.sendMessage(Text.literal("§7[Admin] §fYour unlocked fly targets have been cleared."), false);
+                                    return 1;
+                                })
+                        )
+                )
+
+                // /flytarget reload
                 .then(CommandManager.literal("reload")
                         .executes(context -> {
                             ServerCommandSource source = context.getSource();
@@ -92,5 +147,26 @@ public class FlyTargetCommand {
                         })
                 )
         );
+    }
+
+    // ======== Suggerimenti & util ========
+
+    private static CompletableFuture<Suggestions> suggestTargets(
+            CommandContext<ServerCommandSource> context,
+            SuggestionsBuilder builder
+    ) {
+        return CommandSource.suggestMatching(FlyTargetConfig.getAllTargets().keySet(), builder);
+    }
+
+    private static String pretty(String name) {
+        String[] parts = name.replace('_', ' ').split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (p.isEmpty()) continue;
+            sb.append(Character.toUpperCase(p.charAt(0)));
+            if (p.length() > 1) sb.append(p.substring(1));
+            sb.append(' ');
+        }
+        return sb.toString().trim();
     }
 }

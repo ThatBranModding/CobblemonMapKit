@@ -5,6 +5,7 @@ import com.cobblemon.khataly.modhm.block.ModBlocks;
 import com.cobblemon.khataly.modhm.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.modhm.command.ModCommands;
 import com.cobblemon.khataly.modhm.config.ModConfig;
+import com.cobblemon.khataly.modhm.event.server.FlyTargetProximityWatcher;
 import com.cobblemon.khataly.modhm.event.server.ServerEventHandler;
 import com.cobblemon.khataly.modhm.item.ModItemGroups;
 import com.cobblemon.khataly.modhm.item.ModItems;
@@ -34,6 +35,7 @@ public class HMMod implements ModInitializer {
         ModBlockEntities.registerBlockEntities();
         ModItems.registerModItems();
         ModBlocks.registerModBlocks();
+        FlyTargetProximityWatcher.register();
         ModItemGroups.registerItemGroups();
         ServerEventHandler.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
