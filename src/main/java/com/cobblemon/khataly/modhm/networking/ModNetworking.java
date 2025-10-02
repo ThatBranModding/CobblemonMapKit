@@ -2,6 +2,10 @@ package com.cobblemon.khataly.modhm.networking;
 
 import com.cobblemon.khataly.modhm.networking.handlers.*;
 import com.cobblemon.khataly.modhm.networking.packet.*;
+import com.cobblemon.khataly.modhm.networking.packet.badgebox.EjectBadgeC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.badgebox.InsertBadgeC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.badgebox.OpenBadgeBoxS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.badgebox.SyncBadgeBoxS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.server.MinecraftServer;
 
@@ -33,6 +37,15 @@ public class ModNetworking {
         PayloadTypeRegistry.playC2S().register(UltraHolePacketC2S.ID,   UltraHolePacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(UltraHoleMenuC2SPacket.ID, UltraHoleMenuC2SPacket.CODEC);
 
+
+        // ===== S2C BadgeBox =====
+        PayloadTypeRegistry.playS2C().register(OpenBadgeBoxS2CPacket.ID,  OpenBadgeBoxS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SyncBadgeBoxS2CPacket.ID,  SyncBadgeBoxS2CPacket.CODEC);
+
+        // ===== C2S BadgeBox =====
+        PayloadTypeRegistry.playC2S().register(InsertBadgeC2SPacket.ID,   InsertBadgeC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,    EjectBadgeC2SPacket.CODEC);
+
         // ===== Handlers =====
         RockSmashHandler.register();
         CutHandler.register();
@@ -42,6 +55,7 @@ public class ModNetworking {
         TeleportHandler.register();
         FlashHandler.register();
         UltraHoleHandler.register();
+        BadgeBoxHandler.register();
     }
 
     /** Chiamalo dal tuo tick server (o delega a NetworkingTick). */

@@ -21,6 +21,15 @@ public class ModItemGroups {
                         entries.add(ModBlocks.CUTTABLE_TREE);
                         entries.add(ModBlocks.MOVABLE_ROCK);
                         entries.add(ModBlocks.CLIMBABLE_ROCK);
+                        entries.add(ModItems.BADGE_CASE);
+                        entries.add(ModItems.BOULDER_BADGE);
+                        entries.add(ModItems.CASCADE_BADGE);
+                        entries.add(ModItems.THUNDER_BADGE);
+                        entries.add(ModItems.RAINBOW_BADGE);
+                        entries.add(ModItems.MARSH_BADGE);
+                        entries.add(ModItems.SOUL_BADGE);
+                        entries.add(ModItems.VOLCANO_BADGE);
+                        entries.add(ModItems.EARTH_BADGE);
                     }).build());
 
     public static void registerItemGroups(){

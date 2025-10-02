@@ -3,6 +3,23 @@
   "block.modhm.cuttable_tree": "Cuttable Tree",
   "block.modhm.movable_rock": "Movable Rock",
   "block.modhm.climbable_rock": "Climbable Rock",
-  "block.modhm.ultrahole_portal": "UltraWormhole Portal",
-  "itemgroup.modhm.modhm_group": "HM Mod Group"
+  "block.modhm.ultrahole_portal": "Ultra Wormhole Portal",
+
+  "itemgroup.modhm.modhm_group": "HM Mod Group",
+
+  "item.modhm.badge_case": "Badge Case",
+  "tooltip.modhm.badge_case.count": "%s / %s Badges",
+  "tooltip.modhm.badge_case.open_hint": "Open: right-click the Badge Case",
+  "tooltip.modhm.badge_case.insert_hint": "Insert: right-click while holding a badge",
+  "tooltip.modhm.badge_case.remove_hint": "Remove: hold SHIFT and right-click",
+  "msg.modhm.badge_case.missing": "You don't have a Badge Case in your inventory!",
+
+  "item.modhm.boulder_badge": "Boulder Badge",
+  "item.modhm.cascade_badge": "Cascade Badge",
+  "item.modhm.thunder_badge": "Thunder Badge",
+  "item.modhm.rainbow_badge": "Rainbow Badge",
+  "item.modhm.soul_badge": "Soul Badge",
+  "item.modhm.marsh_badge": "Marsh Badge",
+  "item.modhm.volcano_badge": "Volcano Badge",
+  "item.modhm.earth_badge": "Earth Badge"
 }

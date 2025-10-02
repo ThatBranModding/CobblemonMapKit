@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "modhm:boulder_badge",
+    "modhm:cascade_badge",
+    "modhm:thunder_badge",
+    "modhm:rainbow_badge",
+    "modhm:soul_badge",
+    "modhm:marsh_badge",
+    "modhm:volcano_badge",
+    "modhm:earth_badge"
+  ]
+}
