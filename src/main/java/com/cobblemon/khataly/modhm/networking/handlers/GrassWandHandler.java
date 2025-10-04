@@ -1,18 +1,25 @@
 package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.config.GrassZonesConfig;
+import com.cobblemon.khataly.modhm.item.ModItems;
 import com.cobblemon.khataly.modhm.networking.packet.PlaceGrassC2SPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.TallPlantBlock;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+
 import java.util.UUID;
 
 public class GrassWandHandler {
     private static final int MAX_SIDE = 64;
+    private static final String NBT_MODE = "grass_mode"; // "tall" | "short"
 
     public static void register() {
         ServerPlayNetworking.registerGlobalReceiver(
@@ -38,6 +45,9 @@ public class GrassWandHandler {
 
         if ((maxX - minX + 1) > MAX_SIDE || (maxZ - minZ + 1) > MAX_SIDE) return;
 
+        // Read mode from wand in hand (main/offhand). Default = short.
+        boolean tallMode = readTallMode(player);
+
         Block shortGrassBlock = tryShortGrass();
         int placed = 0;
 
@@ -46,28 +56,30 @@ public class GrassWandHandler {
                 BlockPos pos   = new BlockPos(x, y, z);
                 BlockPos below = pos.down();
 
+                // place only on air with a solid block below
                 if (!world.isAir(pos) || world.isAir(below)) continue;
 
-                // Short grass preferita
-                if (shortGrassBlock != null) {
-                    var st = shortGrassBlock.getDefaultState();
+                if (tallMode) {
+                    // --- TALL GRASS only ---
+                    if (!world.isAir(pos.up())) continue; // needs 2 air blocks
+                    BlockState tall = Blocks.TALL_GRASS.getDefaultState();
+                    if (tall.canPlaceAt(world, pos)) {
+                        TallPlantBlock.placeAt(world, tall, pos, 3);
+                        placed++;
+                    }
+                } else {
+                    // --- SHORT GRASS only ---
+                    if (shortGrassBlock == null) continue;
+                    BlockState st = shortGrassBlock.getDefaultState();
                     if (st.canPlaceAt(world, pos)) {
                         world.setBlockState(pos, st, 3);
                         placed++;
-                        continue;
                     }
-                }
-
-                // Fallback Tall grass
-                var tall = Blocks.TALL_GRASS.getDefaultState();
-                if (tall.canPlaceAt(world, pos)) {
-                    world.setBlockState(pos, tall, 3);
-                    placed++;
                 }
             }
         }
 
-        // Se abbiamo davvero piazzato dell'erba: crea zona e salva
+        // If we actually placed grass: create the zone and save
         if (placed > 0) {
             var defaultSpawns = java.util.List.of(
                     new GrassZonesConfig.SpawnEntry("cobblemon:sentret", 3, 7, 30),
@@ -80,11 +92,29 @@ public class GrassWandHandler {
                     y,
                     defaultSpawns
             );
-            player.sendMessage(Text.literal("Zona d'erba creata: " + id), false);
+            player.sendMessage(Text.literal("Grass zone created: " + id), false);
         }
-
     }
 
+    /** Reads "grass_mode" from the wand (main/offhand). Default short=false. */
+    private static boolean readTallMode(ServerPlayerEntity player) {
+        var main = player.getMainHandStack();
+        var off  = player.getOffHandStack();
+
+        if (!main.isEmpty() && main.getItem() == ModItems.GRASS_WAND) {
+            NbtComponent data = main.get(DataComponentTypes.CUSTOM_DATA);
+            if (data == null) return false;
+            return "tall".equalsIgnoreCase(data.copyNbt().getString(NBT_MODE));
+        } else if (!off.isEmpty() && off.getItem() == ModItems.GRASS_WAND) {
+            NbtComponent data = off.get(DataComponentTypes.CUSTOM_DATA);
+            if (data == null) return false;
+            return "tall".equalsIgnoreCase(data.copyNbt().getString(NBT_MODE));
+        }
+
+        return false; // not holding the wand -> default short
+    }
+
+    /** SHORT_GRASS (new mappings) or legacy GRASS. */
     private static Block tryShortGrass() {
         try { return (Block) Blocks.class.getField("SHORT_GRASS").get(null); }
         catch (Exception e) {

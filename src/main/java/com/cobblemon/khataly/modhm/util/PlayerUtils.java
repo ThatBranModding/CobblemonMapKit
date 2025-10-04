@@ -32,6 +32,13 @@ public class PlayerUtils {
         }
         return false;
     }
+    public static boolean hasUsablePokemon(ServerPlayerEntity player) {
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+        for (Pokemon pk : party) {
+            if (pk != null && !pk.isFainted()) return true;
+        }
+        return false;
+    }
 
     public static RenderablePokemon getRenderPokemonByMove(ServerPlayerEntity player, String hm) {
         MoveTemplate HM = Moves.INSTANCE.getByName(hm);
