@@ -96,6 +96,7 @@ public class LevelCapCommands {
                                     + " §7| Bypass shiny: §f" + LevelCapConfig.isBypassIfShiny()
                                     + " §7| MasterBall bypass: §f" + LevelCapConfig.isBypassOnMasterBall()
                                     + " §7| Clamp gained: §f" + LevelCapConfig.isClampGainedOverCap()
+                                    + " §7| Clamp capture: §f" + LevelCapConfig.isClampCapturedOverCap()
                     ));
                     return 1;
                 })
@@ -121,6 +122,17 @@ public class LevelCapCommands {
                             boolean v = BoolArgumentType.getBool(ctx, "value");
                             LevelCapConfig.setBypassOnMasterBall(v);
                             ctx.getSource().sendMessage(Text.literal("§aMaster Ball capture bypass set to §e" + v + "§a."));
+                            return 1;
+                        })
+                )
+        );
+        root.then(CommandManager.literal("clamps-level")
+                .requires(src -> src.hasPermissionLevel(2))
+                .then(CommandManager.argument("value", BoolArgumentType.bool())
+                        .executes(ctx -> {
+                            boolean v = BoolArgumentType.getBool(ctx, "value");
+                            LevelCapConfig.setClampCapturedOverCap(v);
+                            ctx.getSource().sendMessage(Text.literal("§aClamps level set to §e" + v + "§a."));
                             return 1;
                         })
                 )

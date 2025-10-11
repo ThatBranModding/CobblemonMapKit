@@ -25,26 +25,36 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Level cap enforcement (2025-10):
- *  - EXP: blocco/riduzione fino al cap (battaglie, caramelle, ecc.).
- *  - Capture PRE-hit: se target sopra cap e senza bypass (shiny/master) → blocca la cattura.
- *    Se bypass (shiny/master), tagga la UUID dell'entità per saltare il clamp in GAINED.
- *  - Captured POST: nessun clamp (evita desync/NPE client).
- *  - Gained: clamp solo qui se sopra cap e la config lo richiede, salvo bypass shiny/master/tag.
- *  - LevelUp: safety clamp.
+ * Enforcement (partendo dalla tua versione) + fix:
+ *  - EXP da battaglia: se al cap → block; se sotto → trim per non superare il cap.
+ *  - Caramelle: trim SOLO se clampGainedOverCap==true; se già al cap → block.
+ *  - Capture PRE: shiny/master sbloccano la cattura (bypass SOLO qui).
+ *  - Gained da CATTURA:
+ *      * debounce per evitare doppia gestione;
+ *      * se clampCapturedOverCap==true e livello > cap → clamp (vale per tutti, anche shiny/master);
+ *      * se clampCapturedOverCap==false → consentito, messaggio singolo e whitelist per evitare safety clamp.
+ *  - LevelUp safety: clamp se >cap, eccetto mon in whitelist (catture sopra cap consentite).
+ *  - enabled=false: nessun intervento.
  */
 public final class LevelCapEnforcer {
 
     private LevelCapEnforcer() {}
 
-    /** Finestra extra di safety per il bypass MasterBall (fallback). */
     private static final long BYPASS_WINDOW_MS = 20000L;
 
-    /** playerUUID -> deadline ms per bypass master (fallback temporale) */
+    /** Fallback per consentire cattura con Master Ball */
     private static final Map<UUID, Long> recentMasterBypass = new ConcurrentHashMap<>();
-
-    /** playerUUID -> set delle UUID delle entità catturate con bypass (tag forte, senza scadenza) */
+    /** Tag per entità colpite e consentite sopra cap (serve solo per PRE) */
     private static final Map<UUID, Set<UUID>> captureBypass = new ConcurrentHashMap<>();
+
+    /** Hint: il prossimo ExperienceGainedPre di questo mon è da caramella */
+    private static final Set<UUID> nextExpFromCandy = ConcurrentHashMap.newKeySet();
+
+    /** Whitelist: mon catturati sopra cap quando clampCapturedOverCap==false (evita safety clamp) */
+    private static final Set<UUID> allowedOverCap = ConcurrentHashMap.newKeySet();
+
+    /** Debounce: evita che la gestione del GAINED da cattura scatti due volte per lo stesso mon */
+    private static final Set<UUID> processedCaptureGain = ConcurrentHashMap.newKeySet();
 
     // =========================================================
     //                        REGISTER
@@ -55,7 +65,7 @@ public final class LevelCapEnforcer {
         CobblemonEvents.LEVEL_UP_EVENT.subscribe(Priority.NORMAL, e -> { onLevelUpPost(e); return Unit.INSTANCE; });
 
         CobblemonEvents.THROWN_POKEBALL_HIT.subscribe(Priority.HIGHEST, e -> { onPokeballHit(e); return Unit.INSTANCE; });
-        CobblemonEvents.POKEMON_CAPTURED.subscribe(Priority.NORMAL, e -> { onPokemonCaptured(e); return Unit.INSTANCE; }); // no-op (solo per completezza/log futuro)
+        CobblemonEvents.POKEMON_CAPTURED.subscribe(Priority.NORMAL, e -> { onPokemonCaptured(e); return Unit.INSTANCE; });
 
         CobblemonEvents.POKEMON_GAINED.subscribe(Priority.NORMAL, e -> { onPokemonGained(e); return Unit.INSTANCE; });
     }
@@ -65,6 +75,7 @@ public final class LevelCapEnforcer {
     // =========================================================
     private static void onExperienceGainedPre(ExperienceGainedPreEvent event) {
         if (!LevelCapConfig.isEnabled()) return;
+
         Object pokemon = event.getPokemon();
         ServerPlayerEntity owner = eventPlayerOrOwner(event, pokemon);
         if (owner == null) return;
@@ -72,6 +83,10 @@ public final class LevelCapEnforcer {
         int currentLevel = getPokemonLevel(pokemon);
         int cap = LevelCapService.getEffectiveCap(owner);
 
+        UUID monId = getPokemonUuid(pokemon);
+        boolean isCandyGain = monId != null && nextExpFromCandy.remove(monId);
+
+        // al cap → blocco sempre
         if (LevelCapService.isAtOrOverCap(currentLevel, cap)) {
             cancel(event);
             notify(owner, "§cEXP blocked: Pokémon is at level cap " + cap + ".");
@@ -90,15 +105,18 @@ public final class LevelCapEnforcer {
             return;
         }
 
-        if (incomingExp > expToCap) {
+        // non-candy: trim sempre; candy: trim solo se clampGainedOverCap==true
+        boolean shouldTrim = !isCandyGain || (isCandyGain && LevelCapConfig.isClampGainedOverCap());
+        if (shouldTrim && incomingExp > expToCap) {
             if (setExpAmountOnAnyExpEvent(event, expToCap)) {
-                notify(owner, "§aEXP trimmed to reach level cap " + cap + " without exceeding it.");
+                notify(owner, (isCandyGain ? "§aCandy" : "§aEXP") + " trimmed to reach level cap " + cap + ".");
             }
         }
     }
 
     private static void onExperienceCandyPre(ExperienceCandyUseEvent.Pre event) {
         if (!LevelCapConfig.isEnabled()) return;
+
         Object pokemon = event.getPokemon();
         ServerPlayerEntity owner = eventPlayerOrOwner(event, pokemon);
         if (owner == null) return;
@@ -106,20 +124,32 @@ public final class LevelCapEnforcer {
         int currentLevel = getPokemonLevel(pokemon);
         int cap = LevelCapService.getEffectiveCap(owner);
 
+        UUID monId = getPokemonUuid(pokemon);
+        if (monId != null) nextExpFromCandy.add(monId);
+
         if (LevelCapService.isAtOrOverCap(currentLevel, cap)) {
             cancel(event);
             notify(owner, "§cEXP candy blocked: Pokémon is at level cap " + cap + ".");
         }
+        // Il trim (se abilitato) avverrà in ExperienceGainedPre quando abbiamo l’ammontare.
     }
 
     private static void onLevelUpPost(LevelUpEvent event) {
         if (!LevelCapConfig.isEnabled()) return;
+
         Object pokemon = event.getPokemon();
         ServerPlayerEntity owner = eventPlayerOrOwner(event, pokemon);
         if (owner == null) return;
 
         int lvl = getPokemonLevel(pokemon);
         int cap = LevelCapService.getEffectiveCap(owner);
+
+        UUID monId = getPokemonUuid(pokemon);
+        if (monId != null && allowedOverCap.contains(monId)) {
+            // se rientra entro il cap, ripulisci
+            if (lvl <= cap) allowedOverCap.remove(monId);
+            return; // non clampare catture consentite sopra cap
+        }
 
         if (lvl > cap) {
             MinecraftServer server = owner.getServer();
@@ -160,14 +190,13 @@ public final class LevelCapEnforcer {
             return;
         }
 
-        // Se è stato consentito (shiny/master) e sopra cap → tagga la UUID dell'entità
+        // Tag solo per PRE: non influisce sul post-capture clamp
         if (lvl > cap) {
             UUID targetId = getEntityUuid(targetEntity);
             if (targetId != null) {
                 captureBypass.computeIfAbsent(player.getUuid(), k -> ConcurrentHashMap.newKeySet()).add(targetId);
             }
             if (masterAllowed) {
-                // Fallback temporale: se per qualsiasi motivo non combaciano le UUID, teniamo anche una finestra di 20s.
                 recentMasterBypass.put(player.getUuid(), System.currentTimeMillis() + BYPASS_WINDOW_MS);
                 notify(player, "§aCapture bypass (Master Ball): level " + lvl + " allowed.");
             } else {
@@ -181,8 +210,7 @@ public final class LevelCapEnforcer {
     // =========================================================
     private static void onPokemonCaptured(PokemonCapturedEvent event) {
         if (!LevelCapConfig.isEnabled()) return;
-        // Intenzionalmente nessuna logica: il clamp al catturato è spostato su GAINED
-        // per evitare desync/NPE lato client durante gli update.
+        // no-op: si gestisce su GAINED
     }
 
     // =========================================================
@@ -198,41 +226,43 @@ public final class LevelCapEnforcer {
         int lvl = getPokemonLevel(pokemon);
         int cap = LevelCapService.getEffectiveCap(owner);
 
-        // Valuta i bypass:
-        // 1) tag forte (UUID del Pokémon catturato con bypass)
+        boolean fromCapture = isFromCapture(event, pokemon, owner);
         UUID monId = getPokemonUuid(pokemon);
-        boolean taggedBypass = false;
-        if (monId != null) {
-            Set<UUID> set = captureBypass.getOrDefault(owner.getUuid(), Collections.emptySet());
-            if (set.remove(monId)) {
-                taggedBypass = true;
-            }
-            // pulizia struttura se vuota
-            if (set.isEmpty()) {
-                captureBypass.remove(owner.getUuid());
-            }
+
+        if (!fromCapture || monId == null) return;
+
+        // Debounce: gestisci una sola volta per mon
+        if (!processedCaptureGain.add(monId)) return;
+
+        // ripulisci tag PRE
+        Set<UUID> set = captureBypass.get(owner.getUuid());
+        if (set != null) {
+            set.remove(monId);
+            if (set.isEmpty()) captureBypass.remove(owner.getUuid());
         }
+        // chiudi eventuale finestra master
+        recentMasterBypass.remove(owner.getUuid());
 
-        // 2) bypass shiny da config
-        boolean shinyBypass  = LevelCapConfig.isBypassIfShiny() && isPokemonShiny(pokemon);
-
-        // 3) fallback temporale master
-        boolean masterBypass = consumeMasterWindow(owner.getUuid());
-
-        boolean skipClamp = taggedBypass || shinyBypass || masterBypass;
-
-        if (lvl > cap && !skipClamp) {
-            if (LevelCapConfig.isClampGainedOverCap()) {
+        if (lvl > cap) {
+            if (LevelCapConfig.isClampCapturedOverCap()) {
+                // clamp per tutti, anche shiny/master
                 MinecraftServer server = owner.getServer();
                 if (server != null) {
                     server.execute(() -> {
                         if (setPokemonLevel(pokemon, cap)) {
-                            notify(owner, "§cPokémon level clamped to " + cap + ".");
+                            notify(owner, "§cCaptured Pokémon level clamped to " + cap + ".");
                         }
                     });
+                } else {
+                    setPokemonLevel(pokemon, cap);
+                    notify(owner, "§cCaptured Pokémon level clamped to " + cap + ".");
                 }
+                // assicura che non resti whitelisted
+                allowedOverCap.remove(monId);
             } else {
-                notify(owner, "§ePokémon gained over cap (" + lvl + " > " + cap + ") allowed by config; no clamp applied.");
+                // consentito sopra cap → whitelista per evitare safety clamp
+                allowedOverCap.add(monId);
+                notify(owner, "§eCaptured Pokémon above cap allowed by config (no clamp).");
             }
         }
     }
@@ -240,6 +270,36 @@ public final class LevelCapEnforcer {
     // =========================================================
     //                         UTIL
     // =========================================================
+    private static boolean isFromCapture(PokemonGainedEvent event, Object pokemon, ServerPlayerEntity owner) {
+        // Metodi diretti
+        for (String m : new String[]{"isFromCapture", "wasCapture", "isCapture"}) {
+            try {
+                Method mm = event.getClass().getMethod(m);
+                Object res = mm.invoke(event);
+                if (res instanceof Boolean b) return b;
+            } catch (ReflectiveOperationException ignored) {}
+        }
+        // Sorgente/causa
+        Object src = firstNonNullObj(
+                tryObject(event, "getSource"),
+                tryObject(event, "getCause"),
+                tryObject(event, "getReason"),
+                tryObject(event, "getOrigin")
+        );
+        if (src != null) {
+            String s = String.valueOf(src).toUpperCase(Locale.ROOT);
+            if (s.contains("CAPTURE")) return true;
+        }
+        // Fallback: tag PRE
+        UUID monId = getPokemonUuid(pokemon);
+        if (monId != null) {
+            Set<UUID> set = captureBypass.get(owner.getUuid());
+            if (set != null && set.contains(monId)) return true;
+        }
+        // Fallback: finestra master (indicatore debole ma utile immediatamente dopo la cattura)
+        return recentMasterBypass.containsKey(owner.getUuid());
+    }
+
     private static boolean consumeMasterWindow(UUID playerId) {
         Long until = recentMasterBypass.get(playerId);
         long now = System.currentTimeMillis();
@@ -459,12 +519,8 @@ public final class LevelCapEnforcer {
                 f.setAccessible(true);
                 Object v = f.get(obj);
                 switch (v) {
-                    case null -> {
-                        continue;
-                    }
-                    case CharSequence charSequence -> {
-                        if (isCobblemonMasterBallId(v.toString())) return true;
-                    }
+                    case null -> { continue; }
+                    case CharSequence cs -> { if (isCobblemonMasterBallId(v.toString())) return true; }
                     case Item item -> {
                         String id = itemIdString(item);
                         if (isCobblemonMasterBallId(id)) return true;
@@ -472,12 +528,8 @@ public final class LevelCapEnforcer {
                     case ItemStack st -> {
                         if (!st.isEmpty() && isCobblemonMasterBallId(itemIdString(st.getItem()))) return true;
                     }
-                    case Enum<?> en -> {
-                        if (isCobblemonMasterBallId(en.name())) return true;
-                    }
-                    default -> {
-                        if (isCobblemonMasterBallId(String.valueOf(v))) return true;
-                    }
+                    case Enum<?> en -> { if (isCobblemonMasterBallId(en.name())) return true; }
+                    default -> { if (isCobblemonMasterBallId(String.valueOf(v))) return true; }
                 }
             }
         } catch (Throwable ignored) {}

@@ -17,6 +17,7 @@ import java.util.*;
  * - bypassIfShiny: shiny bypasses capture-cap (NOT EXP cap)
  * - bypassOnMasterBall: if true, allows captures above cap only with cobblemon:master_ball
  * - clampGainedOverCap: if true, clamp level down to cap when a Pokémon is gained by other means (trades, rewards, etc.)
+ * - clampCapturedOverCap: if true, clamp level down to cap when a Pokémon is captured above the cap
  * - progressions: each entry has:
  *     label    (human-friendly, unique, case-insensitive key)
  *     newCap   (int)
@@ -27,7 +28,7 @@ public class LevelCapConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File("config/modhm/levelcap.json");
-    private static final int CURRENT_SCHEMA_VERSION = 4;
+    private static final int CURRENT_SCHEMA_VERSION = 5;
 
     /** Global on/off switch for level-cap logic. */
     private static boolean enabled = true;
@@ -36,8 +37,9 @@ public class LevelCapConfig {
     private static boolean bypassIfShiny = false;
     private static boolean bypassOnMasterBall = false;
 
-    /** New flags */
-    private static boolean clampGainedOverCap   = true; // default: clamp also on non-capture gains
+    /** Flags */
+    private static boolean clampGainedOverCap   = true; // clamp also on non-capture gains
+    private static boolean clampCapturedOverCap = true; // clamp on capture
 
     /** labelLower -> progression */
     private static final Map<String, Progression> progressions = new LinkedHashMap<>();
@@ -53,6 +55,7 @@ public class LevelCapConfig {
         Boolean bypassIfShiny;
         Boolean bypassOnMasterBall;
         Boolean clampGainedOverCap;
+        Boolean clampCapturedOverCap;
         List<Progression> progressions = new ArrayList<>();
     }
 
@@ -89,8 +92,8 @@ public class LevelCapConfig {
         int loadedBase = 20;
         boolean loadedShiny = false;
         boolean loadedMaster = false;
-        boolean loadedClampCapture = true;
         boolean loadedClampGained  = true;
+        boolean loadedClampCaptured = true;
         Map<String, Progression> loaded = new LinkedHashMap<>();
 
         try (FileReader r = new FileReader(CONFIG_FILE)) {
@@ -105,11 +108,12 @@ public class LevelCapConfig {
                 }
 
                 loadedEnabled = d.enabled == null || d.enabled;
-                loadedBase   = (d.baseCap == null) ? 20 : Math.max(1, d.baseCap);
-                loadedShiny  = (d.bypassIfShiny != null && d.bypassIfShiny);
-                loadedMaster = (d.bypassOnMasterBall != null && d.bypassOnMasterBall);
+                loadedBase    = (d.baseCap == null) ? 20 : Math.max(1, d.baseCap);
+                loadedShiny   = (d.bypassIfShiny != null && d.bypassIfShiny);
+                loadedMaster  = (d.bypassOnMasterBall != null && d.bypassOnMasterBall);
 
-                loadedClampGained  = d.clampGainedOverCap == null || d.clampGainedOverCap;
+                loadedClampGained   = d.clampGainedOverCap == null || d.clampGainedOverCap;
+                loadedClampCaptured = d.clampCapturedOverCap == null || d.clampCapturedOverCap;
 
                 if (d.progressions == null) {
                     clean = false;
@@ -143,6 +147,7 @@ public class LevelCapConfig {
         bypassIfShiny = loadedShiny;
         bypassOnMasterBall = loadedMaster;
         clampGainedOverCap   = loadedClampGained;
+        clampCapturedOverCap = loadedClampCaptured;
 
         progressions.clear();
         progressions.putAll(loaded);
@@ -156,6 +161,7 @@ public class LevelCapConfig {
                     + ", bypassShiny=" + bypassIfShiny
                     + ", bypassMasterBall=" + bypassOnMasterBall
                     + ", clampGained=" + clampGainedOverCap
+                    + ", clampCaptured=" + clampCapturedOverCap
                     + ", progressions=" + progressions.size());
         }
     }
@@ -174,6 +180,7 @@ public class LevelCapConfig {
             out.bypassIfShiny = bypassIfShiny;
             out.bypassOnMasterBall = bypassOnMasterBall;
             out.clampGainedOverCap   = clampGainedOverCap;
+            out.clampCapturedOverCap = clampCapturedOverCap;
             out.progressions = new ArrayList<>(progressions.values());
 
             File tmp = new File(CONFIG_FILE.getParent(), CONFIG_FILE.getName() + ".tmp");
@@ -212,6 +219,10 @@ public class LevelCapConfig {
 
     public static boolean isClampGainedOverCap() { return clampGainedOverCap; }
     public static void setClampGainedOverCap(boolean v) { clampGainedOverCap = v; save(); }
+
+    /** Clamp su cattura. */
+    public static boolean isClampCapturedOverCap() { return clampCapturedOverCap; }
+    public static void setClampCapturedOverCap(boolean v) { clampCapturedOverCap = v; save(); }
 
     // -------- Label-centric progressions --------
 
@@ -313,6 +324,7 @@ public class LevelCapConfig {
         bypassIfShiny = false;
         bypassOnMasterBall = true; // default enabled
         clampGainedOverCap   = true;
+        clampCapturedOverCap = true;
 
         progressions.clear();
         progressions.put(normalizeLabel("Steel Badge"),
