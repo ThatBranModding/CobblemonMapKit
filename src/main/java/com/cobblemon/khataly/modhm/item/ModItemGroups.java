@@ -30,6 +30,16 @@ public class ModItemGroups {
                         entries.add(ModItems.GHOST_BADGE);
                         entries.add(ModItems.FAIRY_BADGE);
                         entries.add(ModItems.STEEL_BADGE);
+                        entries.add(ModItems.BUG_BADGE);
+                        entries.add(ModItems.DARK_BADGE);
+                        entries.add(ModItems.ROCK_BADGE);
+                        entries.add(ModItems.PSYCHIC_BADGE);
+                        entries.add(ModItems.EARTH_BADGE);
+                        entries.add(ModItems.ICE_BADGE);
+                        entries.add(ModItems.POISON_BADGE);
+                        entries.add(ModItems.FIGHTING_BADGE);
+                        entries.add(ModItems.NORMAL_BADGE);
+                        entries.add(ModItems.FLYING_BADGE);
                         entries.add(ModItems.GRASS_WAND);
                     }).build());
 
