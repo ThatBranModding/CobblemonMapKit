@@ -2,7 +2,7 @@ package com.cobblemon.khataly.modhm.screen.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
-import com.cobblemon.khataly.modhm.networking.packet.StrengthPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.strength.StrengthPacketC2S;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;

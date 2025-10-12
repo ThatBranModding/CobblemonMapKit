@@ -2,8 +2,8 @@ package com.cobblemon.khataly.modhm.event.client.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
-import com.cobblemon.khataly.modhm.networking.packet.FlashMenuS2CPacket;
-import com.cobblemon.khataly.modhm.networking.packet.FlashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashPacketC2S;
 import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -14,7 +14,6 @@ import kotlin.Unit;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.joml.Vector3f;

@@ -1,6 +1,6 @@
 package com.cobblemon.khataly.modhm.event.server.custom;
 
-import com.cobblemon.khataly.modhm.networking.packet.FlashMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashMenuS2CPacket;
 import com.cobblemon.khataly.modhm.util.PlayerUtils;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;

@@ -1,7 +1,7 @@
 package com.cobblemon.khataly.modhm.screen.custom;
 
-import com.cobblemon.khataly.modhm.networking.packet.FlyMenuS2CPacket;
-import com.cobblemon.khataly.modhm.networking.packet.FlyPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyPacketC2S;
 import com.cobblemon.khataly.modhm.widget.SimpleButton;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;

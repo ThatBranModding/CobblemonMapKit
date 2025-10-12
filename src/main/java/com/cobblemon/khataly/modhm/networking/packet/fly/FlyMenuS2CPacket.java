@@ -1,4 +1,4 @@
-package com.cobblemon.khataly.modhm.networking.packet;
+package com.cobblemon.khataly.modhm.networking.packet.fly;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.config.FlyTargetConfig;

@@ -2,7 +2,7 @@ package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.manager.RestoreManager;
-import com.cobblemon.khataly.modhm.networking.packet.CutPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.cut.CutPacketC2S;
 import com.cobblemon.khataly.modhm.networking.util.NetUtil;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

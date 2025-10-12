@@ -1,22 +1,23 @@
-package com.cobblemon.khataly.modhm.networking.packet;
+package com.cobblemon.khataly.modhm.networking.packet.ultrahole;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 import java.util.UUID;
 
-public record TeleportMenuS2CPacket(
+public record UltraHoleMenuS2CPacket(
         UUID pokemonId,
-        boolean canTeleport
+        boolean canUltraHole
 ) implements CustomPayload {
 
-    public static final CustomPayload.Id<TeleportMenuS2CPacket> ID =
-            new CustomPayload.Id<>(Identifier.of(HMMod.MOD_ID, "show_teleport_menu_s2c"));
+    public static final Id<UltraHoleMenuS2CPacket> ID =
+            new Id<>(Identifier.of(HMMod.MOD_ID, "show_ultrahole_menu_s2c"));
 
-    // Codec manuale per UUID (stessa logica di FlyMenuS2CPacket)
+    // Codec manuale per UUID (stessa logica di UltraHoleMenuS2CPacket)
     private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC = new PacketCodec<>() {
         @Override
         public UUID decode(RegistryByteBuf buf) {
@@ -32,10 +33,10 @@ public record TeleportMenuS2CPacket(
         }
     };
 
-    public static final PacketCodec<RegistryByteBuf, TeleportMenuS2CPacket> CODEC = PacketCodec.tuple(
-            UUID_CODEC, TeleportMenuS2CPacket::pokemonId,
-            net.minecraft.network.codec.PacketCodecs.BOOL, TeleportMenuS2CPacket::canTeleport,
-            TeleportMenuS2CPacket::new
+    public static final PacketCodec<RegistryByteBuf, UltraHoleMenuS2CPacket> CODEC = PacketCodec.tuple(
+            UUID_CODEC, UltraHoleMenuS2CPacket::pokemonId,
+            PacketCodecs.BOOL, UltraHoleMenuS2CPacket::canUltraHole,
+            UltraHoleMenuS2CPacket::new
     );
 
     @Override
@@ -44,7 +45,7 @@ public record TeleportMenuS2CPacket(
     }
 
     /** Factory per creare il pacchetto lato server */
-    public static TeleportMenuS2CPacket fromServerData(UUID pokemonId, boolean canTeleport) {
-        return new TeleportMenuS2CPacket(pokemonId, canTeleport);
+    public static UltraHoleMenuS2CPacket fromServerData(UUID pokemonId, boolean canUltraHole) {
+        return new UltraHoleMenuS2CPacket(pokemonId, canUltraHole);
     }
 }

@@ -1,23 +1,22 @@
-package com.cobblemon.khataly.modhm.networking.packet;
+package com.cobblemon.khataly.modhm.networking.packet.flash;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 import java.util.UUID;
 
-public record UltraHoleMenuS2CPacket(
+public record FlashMenuS2CPacket(
         UUID pokemonId,
-        boolean canUltraHole
+        boolean canFlash
 ) implements CustomPayload {
 
-    public static final Id<UltraHoleMenuS2CPacket> ID =
-            new Id<>(Identifier.of(HMMod.MOD_ID, "show_ultrahole_menu_s2c"));
+    public static final CustomPayload.Id<FlashMenuS2CPacket> ID =
+            new CustomPayload.Id<>(Identifier.of(HMMod.MOD_ID, "show_flash_menu_s2c"));
 
-    // Codec manuale per UUID (stessa logica di UltraHoleMenuS2CPacket)
+    // Codec manuale per UUID (stessa logica di TeleportMenuS2CPacket)
     private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC = new PacketCodec<>() {
         @Override
         public UUID decode(RegistryByteBuf buf) {
@@ -33,10 +32,10 @@ public record UltraHoleMenuS2CPacket(
         }
     };
 
-    public static final PacketCodec<RegistryByteBuf, UltraHoleMenuS2CPacket> CODEC = PacketCodec.tuple(
-            UUID_CODEC, UltraHoleMenuS2CPacket::pokemonId,
-            PacketCodecs.BOOL, UltraHoleMenuS2CPacket::canUltraHole,
-            UltraHoleMenuS2CPacket::new
+    public static final PacketCodec<RegistryByteBuf, FlashMenuS2CPacket> CODEC = PacketCodec.tuple(
+            UUID_CODEC, FlashMenuS2CPacket::pokemonId,
+            net.minecraft.network.codec.PacketCodecs.BOOL, FlashMenuS2CPacket::canFlash,
+            FlashMenuS2CPacket::new
     );
 
     @Override
@@ -45,7 +44,7 @@ public record UltraHoleMenuS2CPacket(
     }
 
     /** Factory per creare il pacchetto lato server */
-    public static UltraHoleMenuS2CPacket fromServerData(UUID pokemonId, boolean canUltraHole) {
-        return new UltraHoleMenuS2CPacket(pokemonId, canUltraHole);
+    public static FlashMenuS2CPacket fromServerData(UUID pokemonId, boolean canFlash) {
+        return new FlashMenuS2CPacket(pokemonId, canFlash);
     }
 }

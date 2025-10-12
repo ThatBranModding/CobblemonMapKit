@@ -2,7 +2,7 @@ package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.config.GrassZonesConfig;
 import com.cobblemon.khataly.modhm.item.ModItems;
-import com.cobblemon.khataly.modhm.networking.packet.PlaceGrassC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.grasszones.PlaceGrassC2SPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -48,22 +48,28 @@ public class GrassWandHandler {
 
         if ((maxX - minX + 1) > MAX_SIDE || (maxZ - minZ + 1) > MAX_SIDE) return;
 
-        // Read mode from wand in hand (main/offhand). Default = short.
+        // Prevent creating a zone that overlaps another one (same world and Y)
+        if (GrassZonesConfig.overlaps(world.getRegistryKey(), minX, minZ, maxX, maxZ, y)) {
+            player.sendMessage(Text.literal("Cannot create the grass zone: it overlaps an existing one."), false);
+            return;
+        }
+
+        // Read wand mode ("tall" or "short"), default = short
         boolean tallMode = readTallMode(player);
 
         Block shortGrassBlock = resolveShortGrass();
         int placed = 0;
 
+        // PLACE GRASS: only if air above and GRASS_BLOCK below
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
                 BlockPos pos   = new BlockPos(x, y, z);
                 BlockPos below = pos.down();
 
-                // place only on air with a solid block below
-                if (!world.isAir(pos) || world.isAir(below)) continue;
+                if (!world.isAir(pos)) continue;
+                if (!world.getBlockState(below).isOf(Blocks.GRASS_BLOCK)) continue;
 
                 if (tallMode) {
-                    // --- TALL GRASS only ---
                     if (!world.isAir(pos.up())) continue; // needs 2 air blocks
                     BlockState tall = Blocks.TALL_GRASS.getDefaultState();
                     if (tall.canPlaceAt(world, pos)) {
@@ -71,7 +77,6 @@ public class GrassWandHandler {
                         placed++;
                     }
                 } else {
-                    // --- SHORT GRASS only ---
                     if (shortGrassBlock == null) continue;
                     BlockState st = shortGrassBlock.getDefaultState();
                     if (st.canPlaceAt(world, pos)) {
@@ -82,21 +87,22 @@ public class GrassWandHandler {
             }
         }
 
-        // If we actually placed grass: create the zone and save
-        if (placed > 0) {
-            var defaultSpawns = java.util.List.of(
-                    new GrassZonesConfig.SpawnEntry("cobblemon:sentret", 3, 7, 30),
-                    new GrassZonesConfig.SpawnEntry("cobblemon:rattata", 3, 7, 30)
-            );
+        // ALWAYS create the zone (even if no grass was placed)
+        var defaultSpawns = java.util.List.of(
+                // Examples: one DAY, one NIGHT, one BOTH
+                new GrassZonesConfig.SpawnEntry("cobblemon:sentret", 3, 7, 30, GrassZonesConfig.TimeBand.DAY),
+                new GrassZonesConfig.SpawnEntry("cobblemon:rattata", 3, 7, 30, GrassZonesConfig.TimeBand.NIGHT),
+                new GrassZonesConfig.SpawnEntry("cobblemon:oddish", 5, 9, 10, GrassZonesConfig.TimeBand.BOTH)
+        );
 
-            UUID id = GrassZonesConfig.addZone(
-                    world.getRegistryKey(),
-                    minX, minZ, maxX, maxZ,
-                    y,
-                    defaultSpawns
-            );
-            player.sendMessage(Text.literal("Grass zone created: " + id), false);
-        }
+        UUID id = GrassZonesConfig.addZone(
+                world.getRegistryKey(),
+                minX, minZ, maxX, maxZ,
+                y,
+                defaultSpawns
+        );
+
+        player.sendMessage(Text.literal("Grass zone created: " + id + " (blocks placed: " + placed + ")"), false);
     }
 
     /** Reads "grass_mode" from the wand (main/offhand). Default short=false. */

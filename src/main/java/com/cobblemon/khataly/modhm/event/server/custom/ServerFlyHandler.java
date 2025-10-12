@@ -2,7 +2,7 @@ package com.cobblemon.khataly.modhm.event.server.custom;
 
 import com.cobblemon.khataly.modhm.config.FlyTargetConfig;
 import com.cobblemon.khataly.modhm.config.PlayerFlyProgress;
-import com.cobblemon.khataly.modhm.networking.packet.FlyMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyMenuS2CPacket;
 import com.cobblemon.khataly.modhm.util.PlayerUtils;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;

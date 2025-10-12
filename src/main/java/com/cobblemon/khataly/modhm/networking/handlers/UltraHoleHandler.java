@@ -3,7 +3,7 @@ package com.cobblemon.khataly.modhm.networking.handlers;
 import com.cobblemon.khataly.modhm.block.ModBlocks;
 import com.cobblemon.khataly.modhm.block.entity.custom.UltraHolePortalEntity;
 import com.cobblemon.khataly.modhm.config.ModConfig;
-import com.cobblemon.khataly.modhm.networking.packet.UltraHolePacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHolePacketC2S;
 import com.cobblemon.khataly.modhm.networking.util.NetUtil;
 import com.cobblemon.khataly.modhm.util.PlayerUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

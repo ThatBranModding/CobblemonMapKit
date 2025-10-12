@@ -1,4 +1,4 @@
-package com.cobblemon.khataly.modhm.networking.packet;
+package com.cobblemon.khataly.modhm.networking.packet.rocksmash;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import net.minecraft.network.RegistryByteBuf;

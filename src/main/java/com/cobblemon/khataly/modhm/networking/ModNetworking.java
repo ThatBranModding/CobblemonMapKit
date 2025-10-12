@@ -6,7 +6,27 @@ import com.cobblemon.khataly.modhm.networking.packet.badgebox.EjectBadgeC2SPacke
 import com.cobblemon.khataly.modhm.networking.packet.badgebox.OpenBadgeBoxS2CPacket;
 import com.cobblemon.khataly.modhm.networking.packet.badgebox.SyncBadgeBoxS2CPacket;
 import com.cobblemon.khataly.modhm.networking.packet.badgebox.PolishBadgeC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.cut.CutPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.fly.FlyPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.grasszones.GrassZonesSyncS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.grasszones.PlaceGrassC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.grasszones.RequestZonesC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.rockclimb.RockClimbPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.rocksmash.RockSmashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.strength.StrengthPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.teleport.TeleportMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.teleport.TeleportMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.teleport.TeleportPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHoleMenuC2SPacket;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHoleMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHolePacketC2S;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 
 public class ModNetworking {
@@ -38,6 +58,19 @@ public class ModNetworking {
         PayloadTypeRegistry.playS2C().register(SyncBadgeBoxS2CPacket.ID,  SyncBadgeBoxS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(PolishBadgeC2SPacket.ID,   PolishBadgeC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,   EjectBadgeC2SPacket.CODEC);
+
+        PayloadTypeRegistry.playS2C().register(GrassZonesSyncS2CPacket.ID, GrassZonesSyncS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RequestZonesC2SPacket.ID,   RequestZonesC2SPacket.CODEC);
+
+        // Receiver server: risponde con lo snapshot
+        ServerPlayNetworking.registerGlobalReceiver(
+                RequestZonesC2SPacket.ID,
+                (payload, ctx) -> ctx.server().execute(() -> {
+                    var pkt = new GrassZonesSyncS2CPacket(GrassZonesSyncS2CPacket.buildDtos());
+                    ServerPlayNetworking.send(ctx.player(), pkt);
+                })
+        );
+
 
         // ======= Handlers =======
         RockSmashHandler.register();

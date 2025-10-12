@@ -1,4 +1,4 @@
-package com.cobblemon.khataly.modhm.networking.packet;
+package com.cobblemon.khataly.modhm.networking.packet.teleport;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import net.minecraft.network.RegistryByteBuf;
@@ -8,15 +8,15 @@ import net.minecraft.util.Identifier;
 
 import java.util.UUID;
 
-public record FlashMenuS2CPacket(
+public record TeleportMenuS2CPacket(
         UUID pokemonId,
-        boolean canFlash
+        boolean canTeleport
 ) implements CustomPayload {
 
-    public static final CustomPayload.Id<FlashMenuS2CPacket> ID =
-            new CustomPayload.Id<>(Identifier.of(HMMod.MOD_ID, "show_flash_menu_s2c"));
+    public static final CustomPayload.Id<TeleportMenuS2CPacket> ID =
+            new CustomPayload.Id<>(Identifier.of(HMMod.MOD_ID, "show_teleport_menu_s2c"));
 
-    // Codec manuale per UUID (stessa logica di TeleportMenuS2CPacket)
+    // Codec manuale per UUID (stessa logica di FlyMenuS2CPacket)
     private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC = new PacketCodec<>() {
         @Override
         public UUID decode(RegistryByteBuf buf) {
@@ -32,10 +32,10 @@ public record FlashMenuS2CPacket(
         }
     };
 
-    public static final PacketCodec<RegistryByteBuf, FlashMenuS2CPacket> CODEC = PacketCodec.tuple(
-            UUID_CODEC, FlashMenuS2CPacket::pokemonId,
-            net.minecraft.network.codec.PacketCodecs.BOOL, FlashMenuS2CPacket::canFlash,
-            FlashMenuS2CPacket::new
+    public static final PacketCodec<RegistryByteBuf, TeleportMenuS2CPacket> CODEC = PacketCodec.tuple(
+            UUID_CODEC, TeleportMenuS2CPacket::pokemonId,
+            net.minecraft.network.codec.PacketCodecs.BOOL, TeleportMenuS2CPacket::canTeleport,
+            TeleportMenuS2CPacket::new
     );
 
     @Override
@@ -44,7 +44,7 @@ public record FlashMenuS2CPacket(
     }
 
     /** Factory per creare il pacchetto lato server */
-    public static FlashMenuS2CPacket fromServerData(UUID pokemonId, boolean canFlash) {
-        return new FlashMenuS2CPacket(pokemonId, canFlash);
+    public static TeleportMenuS2CPacket fromServerData(UUID pokemonId, boolean canTeleport) {
+        return new TeleportMenuS2CPacket(pokemonId, canTeleport);
     }
 }

@@ -1,7 +1,7 @@
 package com.cobblemon.khataly.modhm.screen.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
-import com.cobblemon.khataly.modhm.networking.packet.RockSmashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.rocksmash.RockSmashPacketC2S;
 import com.cobblemon.khataly.modhm.networking.packet.AnimationHMPacketS2C;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;

@@ -2,11 +2,10 @@ package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import com.cobblemon.khataly.modhm.networking.manager.RestoreManager;
-import com.cobblemon.khataly.modhm.networking.packet.RockSmashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.rocksmash.RockSmashPacketC2S;
 import com.cobblemon.khataly.modhm.networking.util.NetUtil;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
 import com.cobblemon.mod.common.CobblemonEntities;
-import com.cobblemon.mod.common.api.moves.Moves;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.battles.BattleBuilder;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -20,8 +19,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public final class RockSmashHandler {
     private RockSmashHandler() {}

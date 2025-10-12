@@ -5,6 +5,7 @@ import com.cobblemon.khataly.modhm.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.modhm.block.renderer.UltraHolePortalRenderer;
 import com.cobblemon.khataly.modhm.event.client.ClientEventHandler;
 import com.cobblemon.khataly.modhm.networking.handlers.BadgeBoxClientHandler;
+import com.cobblemon.khataly.modhm.networking.util.GrassNetworkingInit;
 import com.cobblemon.khataly.modhm.screen.ModScreenHandlers;
 import com.cobblemon.khataly.modhm.screen.custom.CutScreen;
 import com.cobblemon.khataly.modhm.screen.custom.RockClimbScreen;
@@ -30,5 +31,6 @@ public class HMModClient implements ClientModInitializer {
         BadgeBoxClientHandler.register();
         BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
         ClientEventHandler.register();
+        GrassNetworkingInit.registerReceivers();
     }
 }

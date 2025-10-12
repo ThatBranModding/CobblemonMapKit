@@ -2,7 +2,7 @@ package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.block.ModBlocks;
 import com.cobblemon.khataly.modhm.networking.manager.ClimbManager;
-import com.cobblemon.khataly.modhm.networking.packet.RockClimbPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.rockclimb.RockClimbPacketC2S;
 import com.cobblemon.khataly.modhm.networking.util.NetUtil;
 import com.cobblemon.khataly.modhm.config.ModConfig;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

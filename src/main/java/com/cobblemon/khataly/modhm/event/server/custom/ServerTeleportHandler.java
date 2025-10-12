@@ -1,6 +1,6 @@
 package com.cobblemon.khataly.modhm.event.server.custom;
 
-import com.cobblemon.khataly.modhm.networking.packet.TeleportMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.teleport.TeleportMenuS2CPacket;
 import com.cobblemon.khataly.modhm.util.PlayerUtils;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;

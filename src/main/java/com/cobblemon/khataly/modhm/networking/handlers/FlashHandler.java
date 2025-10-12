@@ -1,7 +1,7 @@
 package com.cobblemon.khataly.modhm.networking.handlers;
 
 import com.cobblemon.khataly.modhm.config.ModConfig;
-import com.cobblemon.khataly.modhm.networking.packet.FlashPacketC2S;
+import com.cobblemon.khataly.modhm.networking.packet.flash.FlashPacketC2S;
 import com.cobblemon.khataly.modhm.networking.util.NetUtil;
 import com.cobblemon.khataly.modhm.sound.ModSounds;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;

@@ -10,20 +10,15 @@ import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 
 import java.util.*;
 
-/** Step encounters: logica distinta per erba bassa/alta, ma la lotta è sempre 1v1. */
+/** Step encounters inside zones: now independent from decorative grass. */
 public class GrassEncounterTicker {
 
     private static final int ENCOUNTER_COOLDOWN_TICKS = 60; // ~3s
@@ -41,10 +36,10 @@ public class GrassEncounterTicker {
             // cooldown
             cooldown.computeIfPresent(p.getUuid(), (id, cd) -> Math.max(0, cd - 1));
 
-            // stati non validi
+            // invalid states
             if (p.isSpectator() || !p.isOnGround() || p.hasVehicle()) continue;
 
-            // si è spostato di blocco?
+            // moved to a new block?
             BlockPos now = p.getBlockPos();
             BlockPos prev = lastBlock.put(p.getUuid(), now);
             if (prev != null && prev.equals(now)) continue;
@@ -59,24 +54,18 @@ public class GrassEncounterTicker {
             var zone = zones.getFirst();
             if (now.getY() != zone.y()) continue;
 
-            BlockState stAtFeet = world.getBlockState(now);
-            if (!isDecorativeGrass(stAtFeet)) continue;
-
-            // distinzione alta/bassa (per future differenze)
-            boolean tallGrass = stAtFeet.isOf(Blocks.TALL_GRASS);
-
-            // roll probabilità
+            // roll chance — independent from decorative grass
             Random rng = p.getRandom();
             if (rng.nextDouble() >= BASE_STEP_CHANCE) continue;
 
-            // selezione spawn
+            // pick spawn
             var choice = weightedRandom(zone.spawns(), rng);
             if (choice == null) continue;
 
             int levelRange = choice.maxLevel - choice.minLevel + 1;
             int level = choice.minLevel + (levelRange > 0 ? rng.nextInt(levelRange) : 0);
 
-            // per ora, sempre SINGLE anche in erba alta
+            // always Singles for now
             BattleFormat format = BattleFormat.Companion.getGEN_9_SINGLES();
 
             if (startWildBattle(p, choice.species, level, format)) {
@@ -85,7 +74,7 @@ public class GrassEncounterTicker {
         }
     }
 
-    /** Avvia un PvE 1v1, passando SEMPRE il party per evitare crash. */
+    /** Starts a 1v1 PvE battle, always passing the party to avoid crashes. */
     private static boolean startWildBattle(ServerPlayerEntity player, String speciesId, int level, BattleFormat format) {
         var server = player.getServer();
         if (server == null) return false;
@@ -113,37 +102,23 @@ public class GrassEncounterTicker {
 
         var party = Cobblemon.INSTANCE.getStorage().getParty(player); // non-null in 1.6
 
-        // Avvio dopo 1–2 tick
+        // Start battle after 1–2 ticks
         server.execute(() -> server.execute(() -> {
             if (!entity.isRemoved() && entity.isAlive()) {
                 BattleBuilder.INSTANCE.pve(
                         player,
                         entity,
                         null,        // leading
-                        format,      // sempre singles
+                        format,      // singles
                         false,       // cloneParties
                         false,       // healFirst
                         16f,         // fleeDistance
-                        party        // passa sempre il party per evitare NPE
+                        party
                 );
             }
         }));
 
         return true;
-    }
-
-    /** true se è SHORT_GRASS / TALL_GRASS o legacy GRASS (per vecchie mapping). */
-    private static Block resolveShortGrass() {
-        Block b = Registries.BLOCK.get(Identifier.of("minecraft", "short_grass"));
-        if (b != Blocks.AIR) return b;
-        Block legacy = Registries.BLOCK.get(Identifier.of("minecraft", "grass")); // vecchie mapping
-        return legacy != Blocks.AIR ? legacy : null;
-    }
-
-    private static boolean isDecorativeGrass(BlockState st) {
-        if (st.isOf(Blocks.TALL_GRASS)) return true;
-        Block shortBlock = resolveShortGrass();
-        return shortBlock != null && st.isOf(shortBlock);
     }
 
     private static GrassZonesConfig.SpawnEntry weightedRandom(List<GrassZonesConfig.SpawnEntry> entries, Random r) {

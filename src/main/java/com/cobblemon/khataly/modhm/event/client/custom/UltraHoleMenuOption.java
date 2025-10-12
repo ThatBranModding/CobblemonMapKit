@@ -2,6 +2,8 @@ package com.cobblemon.khataly.modhm.event.client.custom;
 
 import com.cobblemon.khataly.modhm.HMMod;
 import com.cobblemon.khataly.modhm.networking.packet.*;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHoleMenuS2CPacket;
+import com.cobblemon.khataly.modhm.networking.packet.ultrahole.UltraHolePacketC2S;
 import com.cobblemon.khataly.modhm.screen.custom.AnimationMoveScreen;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
