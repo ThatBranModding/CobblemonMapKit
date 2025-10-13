@@ -1,4 +1,61 @@
 {
-  "parent": "item/handheld",
-  "textures": { "layer0": "modhm:item/grass_wand" }
+  "format_version": "1.21.6",
+  "credit": "Made with Blockbench",
+  "textures": {
+    "0": "modhm:item/grass_wand",
+    "particle": "modhm:item/grass_wand"
+  },
+  "elements": [
+    {
+      "from": [7.2, 0, 7.425],
+      "to": [8.8, 8.8, 7.425],
+      "rotation": {"angle": 0, "axis": "y", "origin": [8, 4.4, 7.425]},
+      "faces": {
+        "north": {"uv": [4, 0, 5.5, 8.75], "texture": "#0"},
+        "south": {"uv": [6, 0, 7.5, 8.75], "texture": "#0"},
+        "up": {"uv": [9.5, 2, 8, 0], "texture": "#0"},
+        "down": {"uv": [9.5, 2, 8, 4], "texture": "#0"}
+      }
+    },
+    {
+      "from": [8, 0, 6.625],
+      "to": [8, 8.8, 8.225],
+      "rotation": {"angle": 0, "axis": "y", "origin": [8, 4.4, 7.425]},
+      "faces": {
+        "east": {"uv": [6, 0, 7.5, 8.75], "texture": "#0"},
+        "west": {"uv": [4, 0, 5.5, 8.75], "texture": "#0"},
+        "up": {"uv": [9.5, 2, 8, 0], "rotation": 270, "texture": "#0"},
+        "down": {"uv": [9.5, 2, 8, 4], "rotation": 90, "texture": "#0"}
+      }
+    },
+    {
+      "from": [6.5, 8.25, 5.9],
+      "to": [9.5, 11.35, 8.9],
+      "rotation": {"angle": 0, "axis": "y", "origin": [8, 9.8, 7.4]},
+      "faces": {
+        "north": {"uv": [8, 4, 11.5, 7.5], "texture": "#0"},
+        "east": {"uv": [0, 9, 3, 12.5], "texture": "#0"},
+        "south": {"uv": [8, 8, 11.5, 11.5], "texture": "#0"},
+        "west": {"uv": [3, 9, 6, 12.5], "texture": "#0"},
+        "up": {"uv": [13.5, 3, 10, 0], "texture": "#0"},
+        "down": {"uv": [15.5, 3, 12, 6], "texture": "#0"}
+      }
+    }
+  ],
+  "gui_light": "front",
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [-36, 0, 0],
+      "translation": [0.75, 6.5, 0]
+    },
+    "firstperson_lefthand": {
+      "rotation": [-27, 0, 0],
+      "translation": [0, 4.75, 0]
+    },
+    "gui": {
+      "rotation": [0, 0, 47.5],
+      "translation": [-1.75, 1, 0],
+      "scale": [1.37, 1.37, 1.37]
+    }
+  }
 }

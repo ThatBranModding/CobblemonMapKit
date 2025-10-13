@@ -18,69 +18,132 @@ import net.minecraft.util.math.random.Random;
 
 import java.util.*;
 
-/** Step encounters inside zones: now independent from decorative grass. */
+/**
+ * Incontri "a passo" dentro le Grass Zones, indipendenti dall'erba decorativa.
+ * - Rispetta il cooldown per giocatore.
+ * - Triggera solo quando il player cambia blocco.
+ * - Seleziona lo spawn pesato, filtrato per fascia oraria (DAY/NIGHT/BOTH).
+ */
 public class GrassEncounterTicker {
 
-    private static final int ENCOUNTER_COOLDOWN_TICKS = 60; // ~3s
-    private static final double BASE_STEP_CHANCE = 0.08;    // 8% per step
+    // ~3s a 20 TPS
+    private static final int ENCOUNTER_COOLDOWN_TICKS = 60;
+    // 8% per step
+    private static final double BASE_STEP_CHANCE = 0.08;
 
-    private static final Map<UUID, Integer> cooldown = new HashMap<>();
-    private static final Map<UUID, BlockPos> lastBlock = new HashMap<>();
+    private static final Map<UUID, Integer> COOLDOWN = new HashMap<>();
+    private static final Map<UUID, BlockPos> LAST_BLOCK = new HashMap<>();
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(GrassEncounterTicker::onServerTick);
     }
 
     private static void onServerTick(MinecraftServer server) {
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            // cooldown
-            cooldown.computeIfPresent(p.getUuid(), (id, cd) -> Math.max(0, cd - 1));
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            // scala il cooldown
+            COOLDOWN.computeIfPresent(player.getUuid(), (id, cd) -> Math.max(0, cd - 1));
 
-            // invalid states
-            if (p.isSpectator() || !p.isOnGround() || p.hasVehicle()) continue;
+            if (!isValidStepState(player)) continue;
 
-            // moved to a new block?
-            BlockPos now = p.getBlockPos();
-            BlockPos prev = lastBlock.put(p.getUuid(), now);
+            // controllo movimento a nuovo blocco
+            BlockPos now = player.getBlockPos();
+            BlockPos prev = LAST_BLOCK.put(player.getUuid(), now);
             if (prev != null && prev.equals(now)) continue;
 
-            var world = p.getWorld();
+            // se in cooldown, salta
+            if (COOLDOWN.getOrDefault(player.getUuid(), 0) > 0) continue;
+
+            var world = player.getWorld();
             var wk = world.getRegistryKey();
+
+            // trova zone alla posizione esatta (incluso Y)
             var zones = GrassZonesConfig.findAt(wk, now.getX(), now.getY(), now.getZ());
             if (zones.isEmpty()) continue;
 
-            if (cooldown.getOrDefault(p.getUuid(), 0) > 0) continue;
-
-            var zone = zones.getFirst();
+            // scegliamo la prima zona valida; se ne vuoi più d'una, puoi randomizzarle
+            GrassZonesConfig.Zone zone = zones.getFirst();
             if (now.getY() != zone.y()) continue;
 
-            // roll chance — independent from decorative grass
-            Random rng = p.getRandom();
+            // roll chance base per step
+            Random rng = player.getRandom();
             if (rng.nextDouble() >= BASE_STEP_CHANCE) continue;
 
-            // pick spawn
-            var choice = weightedRandom(zone.spawns(), rng);
+            // filtra gli spawn per fascia oraria
+            List<GrassZonesConfig.SpawnEntry> pool = filterByTime(zone.spawns(), world);
+            if (pool.isEmpty()) continue;
+
+            // scelta pesata
+            GrassZonesConfig.SpawnEntry choice = weightedRandom(pool, rng);
             if (choice == null) continue;
 
-            int levelRange = choice.maxLevel - choice.minLevel + 1;
-            int level = choice.minLevel + (levelRange > 0 ? rng.nextInt(levelRange) : 0);
+            int levelRange = Math.max(1, choice.maxLevel - choice.minLevel + 1);
+            int level = choice.minLevel + rng.nextInt(levelRange);
 
-            // always Singles for now
+            // per ora solo Singles
             BattleFormat format = BattleFormat.Companion.getGEN_9_SINGLES();
 
-            if (startWildBattle(p, choice.species, level, format)) {
-                cooldown.put(p.getUuid(), ENCOUNTER_COOLDOWN_TICKS);
+            if (startWildBattle(player, choice.species, level, format)) {
+                COOLDOWN.put(player.getUuid(), ENCOUNTER_COOLDOWN_TICKS);
             }
         }
     }
 
-    /** Starts a 1v1 PvE battle, always passing the party to avoid crashes. */
+    /** Condizioni minime perché il passo sia valido per un encounter. */
+    private static boolean isValidStepState(ServerPlayerEntity p) {
+        if (p.isSpectator()) return false;
+        if (!p.isOnGround()) return false;
+        return !p.hasVehicle();
+    }
+
+    /** Applica il filtro DAY/NIGHT/BOTH rispetto al ciclo vanilla 0..23999. */
+    private static List<GrassZonesConfig.SpawnEntry> filterByTime(List<GrassZonesConfig.SpawnEntry> entries, net.minecraft.world.World world) {
+        if (entries == null || entries.isEmpty()) return Collections.emptyList();
+
+        // Dimensioni senza sky light (Nether/End o custom) => non filtriamo per orario
+        if (!world.getDimension().hasSkyLight()) return entries;
+
+        long dayTime = world.getTimeOfDay() % 24000L; // 0..23999
+        boolean isDay = dayTime < 12000L;             // 0..11999 = giorno; 12000..23999 = notte
+
+        List<GrassZonesConfig.SpawnEntry> out = new ArrayList<>(entries.size());
+        for (GrassZonesConfig.SpawnEntry e : entries) {
+            if (e == null) continue;
+            if (e.time == GrassZonesConfig.TimeBand.BOTH) {
+                out.add(e);
+            } else if (e.time == GrassZonesConfig.TimeBand.DAY && isDay) {
+                out.add(e);
+            } else if (e.time == GrassZonesConfig.TimeBand.NIGHT && !isDay) {
+                out.add(e);
+            }
+        }
+        return out;
+    }
+
+    /** Estrazione pesata classica. Ritorna null se lista vuota o pesi non validi. */
+    private static GrassZonesConfig.SpawnEntry weightedRandom(List<GrassZonesConfig.SpawnEntry> entries, Random r) {
+        if (entries == null || entries.isEmpty()) return null;
+        int total = 0;
+        for (var e : entries) total += Math.max(0, e.weight);
+        if (total <= 0) return null;
+
+        int roll = r.nextInt(total);
+        int acc = 0;
+        for (var e : entries) {
+            acc += Math.max(0, e.weight);
+            if (roll < acc) return e;
+        }
+        return null;
+    }
+
+    /**
+     * Avvia una battle PvE 1v1; passa sempre il party per evitare crash.
+     */
     private static boolean startWildBattle(ServerPlayerEntity player, String speciesId, int level, BattleFormat format) {
         var server = player.getServer();
         if (server == null) return false;
         if (!PlayerUtils.hasUsablePokemon(player)) return false;
 
-        String key = speciesId == null ? "" : speciesId.toLowerCase();
+        String key = speciesId == null ? "" : speciesId.toLowerCase(Locale.ROOT);
         if (key.contains(":")) key = key.substring(key.indexOf(':') + 1);
 
         Species species = PokemonSpecies.INSTANCE.getByName(key);
@@ -95,14 +158,14 @@ public class GrassEncounterTicker {
         var sw = (net.minecraft.server.world.ServerWorld) player.getWorld();
         BlockPos base = player.getBlockPos();
         BlockPos pos = base.add(1, 0, 0);
-        var vec = new Vec3d(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+        Vec3d vec = new Vec3d(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
 
         PokemonEntity entity = pokemon.sendOut(sw, vec, null, e -> null);
         if (entity == null) return false;
 
         var party = Cobblemon.INSTANCE.getStorage().getParty(player); // non-null in 1.6
 
-        // Start battle after 1–2 ticks
+        // avvia la battle dopo 1–2 tick
         server.execute(() -> server.execute(() -> {
             if (!entity.isRemoved() && entity.isAlive()) {
                 BattleBuilder.INSTANCE.pve(
@@ -119,19 +182,5 @@ public class GrassEncounterTicker {
         }));
 
         return true;
-    }
-
-    private static GrassZonesConfig.SpawnEntry weightedRandom(List<GrassZonesConfig.SpawnEntry> entries, Random r) {
-        if (entries == null || entries.isEmpty()) return null;
-        int total = 0;
-        for (var e : entries) total += Math.max(0, e.weight);
-        if (total <= 0) return null;
-        int roll = r.nextInt(total);
-        int acc = 0;
-        for (var e : entries) {
-            acc += Math.max(0, e.weight);
-            if (roll < acc) return e;
-        }
-        return null;
     }
 }
