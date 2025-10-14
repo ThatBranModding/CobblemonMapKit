@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "id": "modhm",
+  "id": "mapkit",
   "version": "${version}",
-  "name": "Cobblemon HM Mod",
-  "description": "Mod which brings HM functionality into cobblemon world",
+  "name": "Cobblemon Map Kit Mod",
+  "description": "Mod which brings cobblemon tools for creating maps",
   "authors": [
     "Khataly"
   ],
   "license": "MIT License",
-  "icon": "assets/modhm/icon.png",
+  "icon": "assets/mapkit/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.cobblemon.khataly.modhm.HMMod"
+      "com.cobblemon.khataly.mapkit.CobblemonMapKitMod"
     ],
     "client": [
-      "com.cobblemon.khataly.modhm.HMModClient"
+      "com.cobblemon.khataly.mapkit.CobblemonMapKitModClient"
     ]
   },
   "depends": {

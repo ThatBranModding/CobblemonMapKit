@@ -1,0 +1,63 @@
+{
+  "format_version": "1.9.0",
+  "credit": "Made with Blockbench",
+  "textures": {
+    "0": "mapkit:block/ultrahole_portal",
+    "particle": "mapkit:block/ultrahole_portal"
+  },
+  "elements": [
+    {
+      "from": [-9.0368, -7.2768, 8],
+      "to": [25.0368, 28.9264, 8],
+      "rotation": {"angle": 0, "axis": "y", "origin": [4.8056, -7.2768, 5.8704]},
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#0"},
+        "east": {"uv": [0, 0, 0, 16], "texture": "#missing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#0"},
+        "west": {"uv": [0, 0, 0, 16], "texture": "#missing"},
+        "up": {"uv": [0, 0, 16, 0], "texture": "#missing"},
+        "down": {"uv": [0, 0, 16, 0], "texture": "#missing"}
+      }
+    }
+  ],
+  "gui_light": "front",
+  "display": {
+    "thirdperson_righthand": {
+      "scale": [0.29, 0.29, 0.29]
+    },
+    "thirdperson_lefthand": {
+      "scale": [0.29, 0.29, 0.29]
+    },
+    "firstperson_righthand": {
+      "translation": [1.75, 0, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "firstperson_lefthand": {
+      "translation": [1.75, 0, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "ground": {
+      "translation": [0, 2, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "gui": {
+      "translation": [0, -1.5, 0],
+      "scale": [0.41, 0.41, 0.41]
+    },
+    "head": {
+      "translation": [0, 13.75, 0]
+    },
+    "fixed": {
+      "translation": [0, -1.25, 0],
+      "scale": [0.47, 0.47, 0.47]
+    }
+  },
+  "groups": [
+    {
+      "name": "portal",
+      "origin": [8, 8, 8],
+      "color": 0,
+      "children": [0]
+    }
+  ]
+}

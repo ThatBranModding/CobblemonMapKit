@@ -1,4 +1,4 @@
-rootProject.name = "ModHM" //By default, this is how your built jar is called
+rootProject.name = "CobblemonMapKitMod" //By default, this is how your built jar is called
 
 pluginManagement {
     repositories {

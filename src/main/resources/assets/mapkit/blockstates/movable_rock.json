@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "mapkit:block/movable_rock" }
+  }
+}

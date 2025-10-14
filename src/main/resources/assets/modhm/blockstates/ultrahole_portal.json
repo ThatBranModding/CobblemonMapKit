@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "modhm:block/ultrahole_portal" },
-    "facing=south": { "model": "modhm:block/ultrahole_portal", "y": 180 },
-    "facing=west":  { "model": "modhm:block/ultrahole_portal", "y": 270 },
-    "facing=east":  { "model": "modhm:block/ultrahole_portal", "y": 90 }
-  }
-}

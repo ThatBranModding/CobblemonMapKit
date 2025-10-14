@@ -1,0 +1,38 @@
+{
+  "block.mapkit.breakable_rock": "Breakable Rock",
+  "block.mapkit.cuttable_tree": "Cuttable Tree",
+  "block.mapkit.movable_rock": "Movable Rock",
+  "block.mapkit.climbable_rock": "Climbable Rock",
+  "block.mapkit.ultrahole_portal": "Ultra Wormhole Portal",
+
+  "itemgroup.mapkit.mapkit_group": "Cobblemon Map Kit Group",
+
+  "item.mapkit.badge_case": "Badge Case",
+  "item.mapkit.grass_wand": "Grass Wand",
+  "tooltip.mapkit.badge_case.count": "%s / %s badges collected",
+  "tooltip.mapkit.badge_case.hint": "Right-click to open. Insert by using a badge. Shift + Right-click on a badge to remove.",
+  "tooltip.mapkit.badge_case.remove_hint": "Shift + Right-click to remove",
+  "tooltip.mapkit.badge_case.polish_hint": "Left-drag to polish",
+  "msg.mapkit.badge_case.full": "BadgeBox is full (8/8)!",
+  "msg.mapkit.badge_case.missing": "You don't have a Badge Case in your inventory!",
+
+
+  "item.mapkit.fire_badge": "Fire Badge",
+  "item.mapkit.steel_badge": "Steel Badge",
+  "item.mapkit.water_badge": "Water Badge",
+  "item.mapkit.thunder_badge": "Thunder Badge",
+  "item.mapkit.grass_badge": "Grass Badge",
+  "item.mapkit.draco_badge": "Draco Badge",
+  "item.mapkit.ghost_badge": "Ghost Badge",
+  "item.mapkit.fairy_badge": "Fairy Badge",
+  "item.mapkit.poison_badge": "Poison Badge",
+  "item.mapkit.bug_badge": "Bug Badge",
+  "item.mapkit.dark_badge": "Dark Badge",
+  "item.mapkit.rock_badge": "Rock Badge",
+  "item.mapkit.earth_badge": "Earth Badge",
+  "item.mapkit.psychic_badge": "Psychic Badge",
+  "item.mapkit.ice_badge": "Ice Badge",
+  "item.mapkit.fighting_badge": "Fighting Badge",
+  "item.mapkit.normal_badge": "Normal Badge",
+  "item.mapkit.flying_badge": "Flying Badge"
+}

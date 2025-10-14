@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "mapkit:block/ultrahole_portal" },
+    "facing=south": { "model": "mapkit:block/ultrahole_portal", "y": 180 },
+    "facing=west":  { "model": "mapkit:block/ultrahole_portal", "y": 270 },
+    "facing=east":  { "model": "mapkit:block/ultrahole_portal", "y": 90 }
+  }
+}

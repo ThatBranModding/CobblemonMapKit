@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "mapkit:block/breakable_rock" },
+    "facing=south": { "model": "mapkit:block/breakable_rock", "y": 180 },
+    "facing=west":  { "model": "mapkit:block/breakable_rock", "y": 270 },
+    "facing=east":  { "model": "mapkit:block/breakable_rock", "y": 90 }
+  }
+}

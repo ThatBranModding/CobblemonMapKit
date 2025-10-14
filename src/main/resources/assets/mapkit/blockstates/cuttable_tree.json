@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "mapkit:block/cuttable_tree" },
+    "facing=south": { "model": "mapkit:block/cuttable_tree", "y": 180 },
+    "facing=west":  { "model": "mapkit:block/cuttable_tree", "y": 270 },
+    "facing=east":  { "model": "mapkit:block/cuttable_tree", "y": 90 }
+  }
+}

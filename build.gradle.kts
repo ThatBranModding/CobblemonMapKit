@@ -5,8 +5,8 @@ plugins {
     kotlin("jvm") version "1.9.23"
 }
 
-group = "com.cobblemon.khataly.modhm"
-version = "1.0.2-SNAPSHOT"
+group = "com.cobblemon.khataly.mapkit"
+version = "1.0.3-SNAPSHOT"
 
 architectury {
     platformSetupLoomIde()

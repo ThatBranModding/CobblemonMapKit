@@ -1,0 +1,50 @@
+{
+  "breakable_rock": {
+    "subtitles": "sounds.mapkit.breakable_rock",
+    "sounds": [
+      "mapkit:breakable_rock"
+    ]
+  },
+  "cuttable_tree": {
+    "subtitles": "sounds.mapkit.cuttable_tree",
+    "sounds": [
+      "mapkit:cuttable_tree"
+    ]
+  },
+  "teleport": {
+    "subtitles": "sounds.mapkit.teleport",
+    "sounds": [
+      "mapkit:teleport"
+    ]
+  },
+  "fly": {
+    "subtitles": "sounds.mapkit.fly",
+    "sounds": [
+      "mapkit:fly"
+    ]
+  },
+  "flash": {
+    "subtitles": "sounds.mapkit.flash",
+    "sounds": [
+      "mapkit:flash"
+    ]
+  },
+  "wall_bump": {
+    "subtitles": "sounds.mapkit.wall_bump",
+    "sounds": [
+      "mapkit:wall_bump"
+    ]
+  },
+  "climbable_rock": {
+    "subtitles": "sounds.mapkit.climbable_rock",
+    "sounds": [
+      "mapkit:climbable_rock"
+    ]
+  },
+  "movable_rock": {
+    "subtitles": "sounds.mapkit.movable_rock",
+    "sounds": [
+      "mapkit:movable_rock"
+    ]
+  }
+}
