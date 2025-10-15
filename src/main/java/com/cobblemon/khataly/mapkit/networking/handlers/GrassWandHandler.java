@@ -92,7 +92,8 @@ public class GrassWandHandler {
                 // Examples: one DAY, one NIGHT, one BOTH
                 new GrassZonesConfig.SpawnEntry("cobblemon:sentret", 3, 7, 30, GrassZonesConfig.TimeBand.DAY),
                 new GrassZonesConfig.SpawnEntry("cobblemon:rattata", 3, 7, 30, GrassZonesConfig.TimeBand.NIGHT),
-                new GrassZonesConfig.SpawnEntry("cobblemon:oddish", 5, 9, 10, GrassZonesConfig.TimeBand.BOTH)
+                new GrassZonesConfig.SpawnEntry("cobblemon:oddish", 5, 9, 10, GrassZonesConfig.TimeBand.BOTH),
+                new GrassZonesConfig.SpawnEntry("cobblemon:geodude", 10, 14, 30, GrassZonesConfig.TimeBand.BOTH, "alolan")
         );
 
         UUID id = GrassZonesConfig.addZone(

@@ -13,13 +13,13 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.*;
 
-/** Manages saving/loading of Grass Zones, including per-zone shiny odds. */
+/** Gestione completa salvataggio/caricamento delle Grass Zones, con shiny odds per zona e aspect opzionale per gli spawn. */
 public class GrassZonesConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File("config/cobblemonmapkit/grass_zones.json");
 
-    /** Bump schema when changing on-disk format. */
+    /** Manteniamo la versione per retro-compatibilità: l'aggiunta di "aspect" è opzionale, quindi non richiede bump. */
     private static final int CURRENT_SCHEMA_VERSION = 2;
 
     public enum TimeBand { DAY, NIGHT, BOTH }
@@ -31,17 +31,22 @@ public class GrassZonesConfig {
         public final int maxLevel;
         public final int weight;
         public final TimeBand time;
+        /** Variante opzionale (es. "alola", "hisui", "galar", ...). */
+        public final String aspect;
 
-        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time) {
+        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time, String aspect) {
             this.species = species;
             this.minLevel = minLevel;
             this.maxLevel = maxLevel;
             this.weight = weight;
             this.time = (time == null) ? TimeBand.BOTH : time;
+            this.aspect = (aspect != null && !aspect.isBlank()) ? aspect : null;
         }
-        // Back-compat: default to BOTH if time not specified
+        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time) {
+            this(species, minLevel, maxLevel, weight, time, null);
+        }
         public SpawnEntry(String species, int minLevel, int maxLevel, int weight) {
-            this(species, minLevel, maxLevel, weight, TimeBand.BOTH);
+            this(species, minLevel, maxLevel, weight, TimeBand.BOTH, null);
         }
     }
 
@@ -52,10 +57,7 @@ public class GrassZonesConfig {
         private final int y;
         private final long timeCreated;
         private final List<SpawnEntry> spawns;
-
-        /**
-         * Shiny odds specifiche della zona (1 su N). -1 = usa il default globale (es. 4096).
-         */
+        /** Shiny odds specifiche della zona (1 su N). -1 = usa default globale. */
         private final int shinyOdds;
 
         public Zone(UUID id,
@@ -73,8 +75,8 @@ public class GrassZonesConfig {
             this.maxZ = Math.max(minZ, maxZ);
             this.y = y;
             this.timeCreated = timeCreated;
-            this.spawns = List.copyOf(spawns);
-            this.shinyOdds = shinyOdds <= 0 ? -1 : shinyOdds; // normalizza: <=0 -> usa default
+            this.spawns = List.copyOf(spawns == null ? List.of() : spawns);
+            this.shinyOdds = (shinyOdds <= 0) ? -1 : shinyOdds;
         }
 
         public boolean contains(int x, int y, int z, RegistryKey<World> w) {
@@ -96,17 +98,15 @@ public class GrassZonesConfig {
         /** 1 su N; -1 = usa default globale. */
         public int shinyOdds() { return shinyOdds; }
 
-        /** Restituisce una copia con shiny odds aggiornate. */
         public Zone withShinyOdds(int shinyOdds) {
             return new Zone(id, worldKey, minX, minZ, maxX, maxZ, y, timeCreated, spawns, shinyOdds);
         }
-
-        /** Restituisce una copia con lista spawns aggiornata (immutabilità leggera). */
         public Zone withSpawns(List<SpawnEntry> newSpawns) {
             return new Zone(id, worldKey, minX, minZ, maxX, maxZ, y, timeCreated, newSpawns, shinyOdds);
         }
     }
 
+    // ======== ON-DISK STRUCTS ========
     private static class ConfigData {
         Integer schemaVersion;
         List<ZoneData> zones = new ArrayList<>();
@@ -117,16 +117,13 @@ public class GrassZonesConfig {
         int minX, minZ, maxX, maxZ, y;
         long timeCreated;
         List<SpawnData> spawns = new ArrayList<>();
-
-        /**
-         * Shiny odds serializzate (1 su N). Se assente o <=0, verrà inteso come -1 (usa default).
-         */
-        Integer shinyOdds;
+        Integer shinyOdds; // 1 su N; <=0 o null -> default globale
     }
     private static class SpawnData {
         String species;
         int minLevel, maxLevel, weight;
-        String time; // "day" | "night" | "both" (optional; defaults to BOTH)
+        String time;   // "day" | "night" | "both"
+        String aspect; // opzionale
     }
 
     // ======== IN-MEMORY STATE ========
@@ -135,7 +132,7 @@ public class GrassZonesConfig {
     // ======== API ========
     public static void load() {
         if (!CONFIG_FILE.exists()) {
-            CobblemonMapKitMod.LOGGER.info("[GrassZonesConfig] Config file not found: creating an empty one.");
+            CobblemonMapKitMod.LOGGER.info("[GrassZonesConfig] Config file not found, creating empty.");
             safeRewrite(Collections.emptyList());
             return;
         }
@@ -148,7 +145,7 @@ public class GrassZonesConfig {
             if (data == null || data.zones == null) clean = false;
             int ver = (data != null && data.schemaVersion != null) ? data.schemaVersion : CURRENT_SCHEMA_VERSION;
             if (ver != CURRENT_SCHEMA_VERSION) {
-                CobblemonMapKitMod.LOGGER.warn("[GrassZonesConfig] schemaVersion {} != {}. Rewriting a clean file.", ver, CURRENT_SCHEMA_VERSION);
+                CobblemonMapKitMod.LOGGER.warn("[GrassZonesConfig] schemaVersion {} != {} — rewriting.", ver, CURRENT_SCHEMA_VERSION);
                 clean = false;
             }
 
@@ -163,7 +160,7 @@ public class GrassZonesConfig {
                         List<SpawnEntry> spawns = new ArrayList<>();
                         if (zd.spawns != null) {
                             for (SpawnData sd : zd.spawns) {
-                                if (sd.species == null || sd.species.isBlank()
+                                if (sd == null || sd.species == null || sd.species.isBlank()
                                         || sd.minLevel <= 0 || sd.maxLevel < sd.minLevel || sd.weight <= 0) {
                                     CobblemonMapKitMod.LOGGER.warn("[GrassZonesConfig] Invalid spawn in zone {}: {}", zd.id, sd);
                                     clean = false;
@@ -174,13 +171,12 @@ public class GrassZonesConfig {
                                         sd.minLevel,
                                         sd.maxLevel,
                                         sd.weight,
-                                        parseTime(sd.time)
+                                        parseTime(sd.time),
+                                        sd.aspect
                                 ));
                             }
                         }
                         long t = zd.timeCreated == 0 ? Instant.now().toEpochMilli() : zd.timeCreated;
-
-                        // shinyOdds: se nullo o <=0 -> usa -1 (default globale)
                         int shinyOdds = (zd.shinyOdds == null || zd.shinyOdds <= 0) ? -1 : zd.shinyOdds;
 
                         loaded.add(new Zone(id, wk, zd.minX, zd.minZ, zd.maxX, zd.maxZ, zd.y, t, spawns, shinyOdds));
@@ -191,7 +187,7 @@ public class GrassZonesConfig {
                 }
             }
         } catch (Exception e) {
-            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Read error, rewriting a clean file: {}", e.getMessage(), e);
+            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Read error, rewriting: {}", e.getMessage(), e);
             clean = false;
         }
 
@@ -213,7 +209,7 @@ public class GrassZonesConfig {
         };
     }
 
-    // 3D overlap (same world and same exact Y)
+    /** Overlap 3D (stesso world e stessa Y). */
     public static boolean overlaps(RegistryKey<World> worldKey, int minX, int minZ, int maxX, int maxZ, int y) {
         int aMinX = Math.min(minX, maxX);
         int aMaxX = Math.max(minX, maxX);
@@ -223,7 +219,6 @@ public class GrassZonesConfig {
         for (Zone z : ZONES.values()) {
             if (!z.worldKey().equals(worldKey)) continue;
             if (z.y() != y) continue;
-
             boolean xOverlap = aMinX <= z.maxX() && aMaxX >= z.minX();
             boolean zOverlap = aMinZ <= z.maxZ() && aMaxZ >= z.minZ();
             if (xOverlap && zOverlap) return true;
@@ -231,7 +226,7 @@ public class GrassZonesConfig {
         return false;
     }
 
-    // 2D overlap (ignores Y) — optional helper
+    /** Overlap 2D (ignora Y). */
     public static boolean overlaps(RegistryKey<World> worldKey, int minX, int minZ, int maxX, int maxZ) {
         int aMinX = Math.min(minX, maxX);
         int aMaxX = Math.max(minX, maxX);
@@ -265,7 +260,7 @@ public class GrassZonesConfig {
                 zd.worldKey = z.worldKey().getValue().toString();
                 zd.minX = z.minX(); zd.minZ = z.minZ(); zd.maxX = z.maxX(); zd.maxZ = z.maxZ(); zd.y = z.y();
                 zd.timeCreated = z.timeCreated();
-                // shiny odds (1 su N); se -1 non serializziamo nulla? Preferiamo serializzare -1 per chiarezza.
+                // Serializziamo -1 per chiarezza (default globale).
                 zd.shinyOdds = (z.shinyOdds() <= 0) ? -1 : z.shinyOdds();
 
                 for (SpawnEntry se : z.spawns()) {
@@ -274,7 +269,8 @@ public class GrassZonesConfig {
                     sd.minLevel = se.minLevel;
                     sd.maxLevel = se.maxLevel;
                     sd.weight = se.weight;
-                    sd.time = se.time.name().toLowerCase(Locale.ROOT); // "day"/"night"/"both"
+                    sd.time = se.time.name().toLowerCase(Locale.ROOT);
+                    if (se.aspect != null && !se.aspect.isBlank()) sd.aspect = se.aspect;
                     zd.spawns.add(sd);
                 }
                 out.zones.add(zd);
@@ -291,20 +287,19 @@ public class GrassZonesConfig {
                 Files.move(tmp.toPath(), CONFIG_FILE.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Error while saving config file: {}", e.getMessage(), e);
+            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Save error: {}", e.getMessage(), e);
         }
     }
 
-    /** Creation: optional spawn list (you can pass List.of() and add later via commands). */
+    /** Creazione zona con shinyOdds = -1 (usa default globale). */
     public static UUID addZone(RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
                                int y,
                                List<SpawnEntry> spawns) {
-        // Back-compat overload: shinyOdds = -1 (usa default globale)
         return addZone(worldKey, minX, minZ, maxX, maxZ, y, spawns, -1);
     }
 
-    /** Creation with explicit shiny odds (1 su N). Usa -1 per default globale. */
+    /** Creazione con shiny odds esplicite (1 su N). Usa -1 per default globale. */
     public static UUID addZone(RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
                                int y,
@@ -331,18 +326,16 @@ public class GrassZonesConfig {
 
     public static Collection<Zone> getAll() { return Collections.unmodifiableCollection(ZONES.values()); }
 
-    public static GrassZonesConfig.Zone get(UUID id) {
-        return ZONES.get(id);
-    }
+    public static Zone get(UUID id) { return ZONES.get(id); }
 
-    /** Find zones containing a given point (there can be more than one). */
+    /** Trova tutte le zone che contengono un punto. */
     public static List<Zone> findAt(RegistryKey<World> wk, int x, int y, int z) {
         List<Zone> out = new ArrayList<>();
         for (Zone z0 : ZONES.values()) if (z0.contains(x, y, z, wk)) out.add(z0);
         return out;
     }
 
-    /** Spawn set modification */
+    /** Aggiunge uno spawn a una zona. */
     public static boolean addSpawn(UUID zoneId, SpawnEntry entry) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
         List<SpawnEntry> ns = new ArrayList<>(z.spawns()); ns.add(entry);
@@ -350,6 +343,7 @@ public class GrassZonesConfig {
         save(); return true;
     }
 
+    /** Rimuove uno spawn per species id (case-insensitive). */
     public static boolean removeSpawn(UUID zoneId, String speciesId) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
         List<SpawnEntry> ns = new ArrayList<>();
@@ -358,7 +352,7 @@ public class GrassZonesConfig {
         save(); return true;
     }
 
-    /** Imposta le shiny odds (1 su N) per una zona. Usa -1 per tornare al default globale. */
+    /** Imposta shiny odds (1 su N) per zona. -1 = default globale. */
     public static boolean setZoneShinyOdds(UUID zoneId, int shinyOdds) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
         ZONES.put(zoneId, z.withShinyOdds(shinyOdds));
@@ -379,7 +373,7 @@ public class GrassZonesConfig {
             save();
             CobblemonMapKitMod.LOGGER.info("[GrassZonesConfig] File rebuilt with {} zones.", ZONES.size());
         } catch (Exception ex) {
-            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Error during safe rewrite of the config file: {}", ex.getMessage(), ex);
+            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Safe rewrite error: {}", ex.getMessage(), ex);
         }
     }
 }
