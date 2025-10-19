@@ -16,6 +16,7 @@ import com.cobblemon.mod.common.pokemon.Species;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
@@ -241,7 +242,7 @@ public class GrassEncounterTicker {
         pokemon.initializeMoveset(true);
         pokemon.heal();
 
-        var sw = (net.minecraft.server.world.ServerWorld) player.getWorld();
+        var sw = (ServerWorld) player.getWorld();
         BlockPos base = player.getBlockPos();
         BlockPos pos = base.add(1, 0, 0);
         Vec3d vec = new Vec3d(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);

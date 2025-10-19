@@ -1,4 +1,4 @@
-package com.cobblemon.khataly.mapkit.event.server.custom;
+package com.cobblemon.khataly.mapkit.event.server;
 
 import com.cobblemon.khataly.mapkit.config.LevelCapConfig;
 import com.cobblemon.khataly.mapkit.config.PlayerLevelCapProgress;
@@ -31,6 +31,7 @@ public final class LevelCapProgressionWatcher {
 
     private LevelCapProgressionWatcher() {}
 
+    // Mappa: prossimo timestamp (ms) a cui scansionare il giocatore
     private static final Map<UUID, Long> nextScanAt = new HashMap<>();
     private static final long RESCAN_INTERVAL_MS = 1000L;
 
@@ -51,23 +52,26 @@ public final class LevelCapProgressionWatcher {
     // ================= CORE =================
 
     private static void tickServer(MinecraftServer server) {
-        long now = System.currentTimeMillis();
-        Iterator<Map.Entry<UUID, Long>> it = nextScanAt.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Long> e = it.next();
-            if (e.getValue() > now) continue;
+        final long now = System.currentTimeMillis();
 
-            UUID uuid = e.getKey();
-            it.remove();
+        // 1) Seleziona gli UUID scaduti e rimuovili dalla mappa in un passaggio sicuro
+        final List<UUID> due = new ArrayList<>();
+        // removeIf usa internamente l'iterator.remove() -> nessuna CME
+        nextScanAt.entrySet().removeIf(e -> {
+            if (e.getValue() <= now) {
+                due.add(e.getKey());
+                return true;
+            }
+            return false;
+        });
 
+        // 2) Processa gli scaduti e poi reschedula (fuori dall'iterazione sopra)
+        for (UUID uuid : due) {
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
             if (player != null) {
-                // Se il sistema è disabilitato, non scansionare: ripianifica soltanto.
-                if (!LevelCapConfig.isEnabled()) {
-                    scheduleSoon(uuid, RESCAN_INTERVAL_MS);
-                    continue;
+                if (LevelCapConfig.isEnabled()) {
+                    scanAndApply(player);
                 }
-                scanAndApply(player);
                 scheduleSoon(uuid, RESCAN_INTERVAL_MS);
             }
         }
@@ -83,11 +87,11 @@ public final class LevelCapProgressionWatcher {
         UUID uuid = player.getUuid();
         int appliedNow = 0;
 
-        // Per ogni LABEL configurata, guarda gli itemIds collegati
-        for (String labelKey : labelsCaps.keySet()) {
+        // Snapshot delle chiavi per evitare problemi se il config mutasse durante il loop
+        for (String labelKey : new ArrayList<>(labelsCaps.keySet())) {
             if (PlayerLevelCapProgress.isApplied(uuid, labelKey)) continue;
 
-            var itemIds = LevelCapConfig.getItemIdsForLabel(labelKey);
+            Collection<String> itemIds = LevelCapConfig.getItemIdsForLabel(labelKey);
             if (itemIds == null || itemIds.isEmpty()) continue;
 
             if (!hasAnyOf(player, itemIds)) continue;
@@ -114,7 +118,9 @@ public final class LevelCapProgressionWatcher {
     private static void scheduleSoon(UUID uuid, long delayMs) {
         long when = System.currentTimeMillis() + Math.max(0L, delayMs);
         long existing = nextScanAt.getOrDefault(uuid, 0L);
-        if (existing == 0L || when < existing) nextScanAt.put(uuid, when);
+        if (existing == 0L || when < existing) {
+            nextScanAt.put(uuid, when);
+        }
     }
 
     /** true se il player ha in inventario *almeno uno* degli itemIds. */
