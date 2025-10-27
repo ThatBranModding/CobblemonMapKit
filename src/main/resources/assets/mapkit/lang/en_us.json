@@ -7,6 +7,12 @@
   "block.mapkit.directional_panel_block": "Directional Panel Block",
   "itemgroup.mapkit.mapkit_group": "Cobblemon Map Kit Group",
 
+  "item.mapkit.bicycle": "Bicycle",
+  "item.mapkit.bicycle.enabled": "Bicycle enabled 🚲",
+  "item.mapkit.bicycle.disabled": "Bicycle disabled",
+  "item.mapkit.bicycle.cannot_use_now": "You can’t use the bicycle right now.",
+  "message.mapkit.bike.auto_disabled": "Your bicycle has been automatically disabled.",
+
   "item.mapkit.badge_case": "Badge Case",
   "item.mapkit.grass_wand": "Grass Wand",
   "tooltip.mapkit.badge_case.count": "%s / %s badges collected",

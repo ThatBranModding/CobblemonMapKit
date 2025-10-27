@@ -7,6 +7,7 @@ import com.cobblemon.khataly.mapkit.command.ModCommands;
 import com.cobblemon.khataly.mapkit.config.GrassZonesConfig;
 import com.cobblemon.khataly.mapkit.config.LevelCapConfig;
 import com.cobblemon.khataly.mapkit.config.HMConfig;
+import com.cobblemon.khataly.mapkit.entity.ModEntities;
 import com.cobblemon.khataly.mapkit.event.server.ServerEventHandler;
 import com.cobblemon.khataly.mapkit.event.server.custom.GrassEncounterTicker;
 import com.cobblemon.khataly.mapkit.item.ModItemGroups;
@@ -49,6 +50,8 @@ public class CobblemonMapKitMod implements ModInitializer {
         });
         GrassEncounterTicker.register();
         ServerTickEvents.END_SERVER_TICK.register(ModNetworking::tick);
+
+        ModEntities.register();
 
 
 

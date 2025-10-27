@@ -3,6 +3,11 @@ package com.cobblemon.khataly.mapkit;
 import com.cobblemon.khataly.mapkit.block.ModBlocks;
 import com.cobblemon.khataly.mapkit.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.mapkit.block.renderer.UltraHolePortalRenderer;
+import com.cobblemon.khataly.mapkit.entity.ModEntities;
+import com.cobblemon.khataly.mapkit.entity.model.BicycleEntityModel;
+import com.cobblemon.khataly.mapkit.entity.model.ModModelLayers;
+import com.cobblemon.khataly.mapkit.entity.render.BicycleRenderer;
+import com.cobblemon.khataly.mapkit.entity.render.ModEntityRenderers;
 import com.cobblemon.khataly.mapkit.event.client.ClientEventHandler;
 import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeBoxClientHandler;
@@ -15,6 +20,8 @@ import com.cobblemon.khataly.mapkit.screen.custom.StrengthScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
@@ -39,5 +46,9 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
             // Intenzionalmente vuoto: non renderizzare niente
         };
         ArmorRenderer.register(invisibleBoots, ModItems.RUNNING_SHOES);
+
+        ModEntityRenderers.register();
+        EntityModelLayerRegistry.registerModelLayer(ModModelLayers.BICYCLE, BicycleEntityModel::getTexturedModelData);
+        EntityRendererRegistry.register(ModEntities.BICYCLE, BicycleRenderer::new);
     }
 }
