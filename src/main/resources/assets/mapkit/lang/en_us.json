@@ -16,6 +16,8 @@
   "msg.mapkit.badge_case.full": "BadgeBox is full (8/8)!",
   "msg.mapkit.badge_case.missing": "You don't have a Badge Case in your inventory!",
 
+  "item.mapkit.running_shoes": "Running Shoes",
+  "tooltip.mapkit.running_shoes": "+50% movement speed when worn",
 
   "item.mapkit.fire_badge": "Fire Badge",
   "item.mapkit.steel_badge": "Steel Badge",

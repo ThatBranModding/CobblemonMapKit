@@ -4,6 +4,7 @@ import com.cobblemon.khataly.mapkit.block.ModBlocks;
 import com.cobblemon.khataly.mapkit.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.mapkit.block.renderer.UltraHolePortalRenderer;
 import com.cobblemon.khataly.mapkit.event.client.ClientEventHandler;
+import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeBoxClientHandler;
 import com.cobblemon.khataly.mapkit.networking.util.GrassNetworkingInit;
 import com.cobblemon.khataly.mapkit.screen.ModScreenHandlers;
@@ -13,6 +14,7 @@ import com.cobblemon.khataly.mapkit.screen.custom.RockSmashScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.StrengthScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
@@ -32,5 +34,10 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
         ClientEventHandler.register();
         GrassNetworkingInit.registerReceivers();
+
+        ArmorRenderer invisibleBoots = (matrices, vertexConsumers, stack, entity, slot, light, model) -> {
+            // Intenzionalmente vuoto: non renderizzare niente
+        };
+        ArmorRenderer.register(invisibleBoots, ModItems.RUNNING_SHOES);
     }
 }

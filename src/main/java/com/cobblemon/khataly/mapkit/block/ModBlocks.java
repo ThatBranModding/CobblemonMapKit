@@ -37,7 +37,10 @@ public class ModBlocks {
                     .strength(-1.0F, 3600000.0F)
                     .nonOpaque()));
 
-
+    public static final Block DIRECTIONAL_PANEL_BLOCK = registerBlock("directional_panel_block",
+            new DirectionalPanelBlock(AbstractBlock.Settings.create()
+                    .strength(-1.0F, 3600000.0F)
+                    .nonOpaque()));
 
     private static Block registerBlock(String name, Block block){
         registerBlockItem(name, block);

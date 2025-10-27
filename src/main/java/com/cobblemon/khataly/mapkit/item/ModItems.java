@@ -4,6 +4,9 @@ import com.cobblemon.khataly.mapkit.CobblemonMapKitMod;
 import com.cobblemon.khataly.mapkit.item.custom.BadgeCaseItem;
 import com.cobblemon.khataly.mapkit.item.custom.BadgeItem;
 import com.cobblemon.khataly.mapkit.item.custom.GrassWandItem;
+import com.cobblemon.khataly.mapkit.item.custom.RunningShoesItem;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ArmorMaterials;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -26,6 +29,13 @@ public class ModItems {
     public static final Item GRASS_BADGE = registerItem("grass_badge",
             new BadgeItem(new Item.Settings().maxCount(1)));
 
+    public static final Item RUNNING_SHOES = registerItem("running_shoes",
+            new RunningShoesItem(
+                    ArmorMaterials.CHAIN,           // puoi fare un materiale custom più avanti
+                    ArmorItem.Type.BOOTS,
+                    new Item.Settings().maxCount(1),
+                    0.50                              // +50% velocità
+            ));
     public static final Item GHOST_BADGE = registerItem("ghost_badge",
             new BadgeItem(new Item.Settings().maxCount(1)));
 
