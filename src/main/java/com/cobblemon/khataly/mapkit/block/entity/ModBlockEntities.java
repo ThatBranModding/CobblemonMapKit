@@ -29,6 +29,11 @@ public class ModBlockEntities {
     public static final BlockEntityType<UltraHolePortalEntity> ULTRAHOLE_ROCK_BE =
             Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of(CobblemonMapKitMod.MOD_ID, "ultrahole_rock_be"),
                     BlockEntityType.Builder.create(UltraHolePortalEntity::new, ModBlocks.ULTRAHOLE_PORTAL).build(null));
+
+    public static final BlockEntityType<TeleportBlockEntity> TELEPORT_BLOCK_BE =
+            Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of(CobblemonMapKitMod.MOD_ID, "teleport_block_be"),
+                    BlockEntityType.Builder.create(TeleportBlockEntity::new, ModBlocks.TELEPORT_BLOCK).build(null));
+
     public static void registerBlockEntities() {
         CobblemonMapKitMod.LOGGER.info("Registering Block Entities for " + CobblemonMapKitMod.MOD_ID);
     }

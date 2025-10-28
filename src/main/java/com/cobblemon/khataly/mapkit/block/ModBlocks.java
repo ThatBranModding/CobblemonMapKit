@@ -42,6 +42,11 @@ public class ModBlocks {
                     .strength(-1.0F, 3600000.0F)
                     .nonOpaque()));
 
+    public static final Block TELEPORT_BLOCK = registerBlock("teleport_block",
+            new TeleportBlock(AbstractBlock.Settings.create()
+                    .strength(-1.0F, 3600000.0F)
+            ));
+
     private static Block registerBlock(String name, Block block){
         registerBlockItem(name, block);
         return Registry.register(Registries.BLOCK, Identifier.of(CobblemonMapKitMod.MOD_ID, name), block);

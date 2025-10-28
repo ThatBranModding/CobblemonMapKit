@@ -5,6 +5,7 @@
   "block.mapkit.climbable_rock": "Climbable Rock",
   "block.mapkit.ultrahole_portal": "Ultra Wormhole Portal",
   "block.mapkit.directional_panel_block": "Directional Panel Block",
+  "block.mapkit.teleport_block": "Teleport Block",
   "itemgroup.mapkit.mapkit_group": "Cobblemon Map Kit Group",
 
   "item.mapkit.bicycle": "Bicycle",

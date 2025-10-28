@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "mapkit:block/teleport_block" }
+  }
+}

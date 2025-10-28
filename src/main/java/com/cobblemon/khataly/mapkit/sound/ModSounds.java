@@ -16,6 +16,7 @@ public class ModSounds {
     public static final SoundEvent TELEPORT = registerSoundEvent("teleport");
     public static final SoundEvent FLY = registerSoundEvent("fly");
     public static final SoundEvent FLASH = registerSoundEvent("flash");
+    public static final SoundEvent TELEPORT_BLOCK = registerSoundEvent("teleport_block");
 
     private static SoundEvent registerSoundEvent(String name) {
         Identifier id = Identifier.of(CobblemonMapKitMod.MOD_ID, name);
