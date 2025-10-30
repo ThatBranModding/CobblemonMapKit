@@ -121,9 +121,6 @@ public class BicycleEntity extends PathAwareEntity {
 
         // particelle e suono
         if (wheelieTicks % 8 == 0 && this.getWorld() instanceof ServerWorld sw) {
-            sw.spawnParticles(ParticleTypes.CLOUD,
-                    this.getX(), this.getY() + 0.3, this.getZ(),
-                    4, 0.12, 0.0, 0.12, 0.01);
             this.playSound(ModSounds.BIKE_JUMP, 0.35f, 1.2f);
         }
 
@@ -255,9 +252,7 @@ public class BicycleEntity extends PathAwareEntity {
 
         if (active) {
             this.playSound(SoundEvents.BLOCK_PISTON_EXTEND, 0.7f, 1.4f);
-            if (this.getWorld() instanceof ServerWorld sw)
-                sw.spawnParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 0.3, this.getZ(),
-                        6, 0.2, 0.0, 0.2, 0.01);
+            ServerWorld sw = (ServerWorld) this.getWorld();
         } else {
             this.playSound(SoundEvents.BLOCK_PISTON_CONTRACT, 0.5f, 1.0f);
             this.setPitch(0);
