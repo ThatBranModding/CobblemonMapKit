@@ -12,6 +12,8 @@ import com.cobblemon.khataly.mapkit.event.client.ClientEventHandler;
 import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeBoxClientHandler;
 import com.cobblemon.khataly.mapkit.networking.packet.RotatePlayerS2CPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.bike.ToggleBikeGearC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.bike.BikeWheelieC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.util.ClientAnimationState;
 import com.cobblemon.khataly.mapkit.networking.util.GrassNetworkingInit;
 import com.cobblemon.khataly.mapkit.screen.ModScreenHandlers;
@@ -26,57 +28,123 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 
+/**
+ * Client initializer for CobblemonMapKitMod.
+ * Registers client-only UI, renderers, networking receivers and input handling.
+ */
 public class CobblemonMapKitModClient implements ClientModInitializer {
+
+    // Edge-detection per gli input
+    private boolean wasUsePressed   = false; // right-click / "use" key
+    private boolean wasJumpPressed  = false; // space / "jump" key
 
     @Override
     public void onInitializeClient() {
-        // Registrazione schermate
-        HandledScreens.register(ModScreenHandlers.ROCK_SMASH_SCREEN_HANDLER, RockSmashScreen::new);
-        HandledScreens.register(ModScreenHandlers.CUT_SCREEN_HANDLER, CutScreen::new);
-        HandledScreens.register(ModScreenHandlers.STRENGHT_SCREEN_HANDLER, StrengthScreen::new);
-        HandledScreens.register(ModScreenHandlers.ROCKCLIMB_SCREEN_HANDLER, RockClimbScreen::new);
-        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.CLIMBABLE_ROCK, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.ULTRAHOLE_PORTAL, RenderLayer.getCutout());
-        BadgeBoxClientHandler.register();
-        BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
-        ClientEventHandler.register();
-        GrassNetworkingInit.registerReceivers();
+        registerScreensAndBlocks();
+        registerRenderers();
+        registerClientReceivers();
+        registerClientEvents();
+        registerBicycleInputHandlers();
+    }
 
-        ArmorRenderer invisibleBoots = (matrices, vertexConsumers, stack, entity, slot, light, model) -> {
-            // Intenzionalmente vuoto: non renderizzare niente
-        };
+    // =============================
+    // 📺 Screens & Block layers
+    // =============================
+    private void registerScreensAndBlocks() {
+        HandledScreens.register(ModScreenHandlers.ROCK_SMASH_SCREEN_HANDLER, RockSmashScreen::new);
+        HandledScreens.register(ModScreenHandlers.CUT_SCREEN_HANDLER,        CutScreen::new);
+        HandledScreens.register(ModScreenHandlers.STRENGHT_SCREEN_HANDLER,   StrengthScreen::new);
+        HandledScreens.register(ModScreenHandlers.ROCKCLIMB_SCREEN_HANDLER,  RockClimbScreen::new);
+
+        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.CLIMBABLE_ROCK,   RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.ULTRAHOLE_PORTAL, RenderLayer.getCutout());
+
+        BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
+    }
+
+    // =============================
+    // 🎨 Renderers & Models
+    // =============================
+    private void registerRenderers() {
+        // Esempio: stivali invisibili
+        ArmorRenderer invisibleBoots = (matrices, vertexConsumers, stack, entity, slot, light, model) -> {};
         ArmorRenderer.register(invisibleBoots, ModItems.RUNNING_SHOES);
 
         ModEntityRenderers.register();
         EntityModelLayerRegistry.registerModelLayer(ModModelLayers.BICYCLE, BicycleEntityModel::getTexturedModelData);
         EntityRendererRegistry.register(ModEntities.BICYCLE, BicycleRenderer::new);
+    }
 
-        ClientPlayNetworking.registerGlobalReceiver(RotatePlayerS2CPacket.ID, (payload, context) -> {
+    // =============================
+    // 🔌 Client networking receivers (S2C)
+    // =============================
+    private void registerClientReceivers() {
+        BadgeBoxClientHandler.register();
+        GrassNetworkingInit.registerReceivers();
+
+        // Rotazione graduale del player (già presente)
+        ClientPlayNetworking.registerGlobalReceiver(RotatePlayerS2CPacket.ID, (payload, ctx) -> {
             float total = payload.totalRotation();
-            int ticks = Math.max(1, payload.durationTicks());
-            context.client().execute(() -> {
+            int ticks   = Math.max(1, payload.durationTicks());
+            ctx.client().execute(() -> {
                 ClientAnimationState.rotationPerTick = total / ticks;
-                ClientAnimationState.ticksRemaining = ticks;
+                ClientAnimationState.ticksRemaining  = ticks;
             });
         });
+    }
 
-        // Applica la rotazione OGNI TICK client (lineare)
+    // =============================
+    // ⚙️ Eventi client generali
+    // =============================
+    private void registerClientEvents() {
+        ClientEventHandler.register();
+
+        // Applica la rotazione ogni tick (già presente)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (ClientAnimationState.ticksRemaining > 0 && client.player != null) {
                 float delta = ClientAnimationState.rotationPerTick;
-                var p = client.player;
+                var   p     = client.player;
                 p.setYaw(p.getYaw() + delta);
-                p.setHeadYaw(p.getHeadYaw() + delta); // (consigliato) sincronizza la testa
+                p.setHeadYaw(p.getHeadYaw() + delta);
                 ClientAnimationState.ticksRemaining--;
                 if (ClientAnimationState.ticksRemaining == 0) {
                     ClientAnimationState.rotationPerTick = 0f;
                 }
+            }
+        });
+    }
+
+    // =============================
+    // 🚲 Input bici (gear + wheelie)
+    // =============================
+    private void registerBicycleInputHandlers() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            final var player = client.player;
+            if (client.world == null || player == null) return;
+
+            final boolean ridingBike = player.hasVehicle()
+                    && player.getVehicle() instanceof com.cobblemon.khataly.mapkit.entity.BicycleEntity;
+
+            // ---- Right-click / Use (toggle gear quando MANO VUOTA) ----
+            boolean usePressed  = client.options.useKey.isPressed();
+            boolean useJustDown = usePressed && !wasUsePressed;
+            wasUsePressed = usePressed;
+
+            if (useJustDown && ridingBike && player.getMainHandStack().isEmpty()) {
+                ClientPlayNetworking.send(new ToggleBikeGearC2SPacket());
+            }
+
+            // ---- Space / Jump (wheelie on press, stop on release) ----
+            boolean jumpPressed  = client.options.jumpKey.isPressed();
+            boolean jumpChanged  = jumpPressed != wasJumpPressed;
+            wasJumpPressed = jumpPressed;
+
+            if (jumpChanged && ridingBike) {
+                ClientPlayNetworking.send(new BikeWheelieC2SPacket(jumpPressed));
             }
         });
     }
