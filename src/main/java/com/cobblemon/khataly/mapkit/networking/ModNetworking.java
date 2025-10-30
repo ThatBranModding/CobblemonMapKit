@@ -1,11 +1,14 @@
 package com.cobblemon.khataly.mapkit.networking;
 
+import com.cobblemon.khataly.mapkit.entity.BicycleEntity;
 import com.cobblemon.khataly.mapkit.networking.handlers.*;
 import com.cobblemon.khataly.mapkit.networking.packet.*;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.EjectBadgeC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.OpenBadgeBoxS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.SyncBadgeBoxS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.PolishBadgeC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.bike.BikeWheelieC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.bike.ToggleBikeGearC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.cut.CutPacketC2S;
 import com.cobblemon.khataly.mapkit.networking.packet.flash.FlashMenuC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.flash.FlashMenuS2CPacket;
@@ -62,6 +65,33 @@ public class ModNetworking {
 
         PayloadTypeRegistry.playS2C().register(GrassZonesSyncS2CPacket.ID, GrassZonesSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestZonesC2SPacket.ID,   RequestZonesC2SPacket.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(ToggleBikeGearC2SPacket.ID, ToggleBikeGearC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(BikeWheelieC2SPacket.ID, BikeWheelieC2SPacket.CODEC);
+
+
+        ServerPlayNetworking.registerGlobalReceiver(
+                BikeWheelieC2SPacket.ID,
+                (payload, ctx) -> {
+                    var player = ctx.player();
+                    if (player == null) return;
+                    if (player.getVehicle() instanceof BicycleEntity bike) {
+                        bike.setWheelie(payload.pressed());
+                    }
+                }
+        );
+
+        ServerPlayNetworking.registerGlobalReceiver(
+                ToggleBikeGearC2SPacket.ID,
+                (payload, context) -> {
+                    var player = context.player();
+                    if (player == null) return;
+
+                    if (player.hasVehicle() && player.getVehicle() instanceof BicycleEntity bike) {
+                        bike.toggleGear(player);
+                    }
+                }
+        );
 
         // Receiver server: risponde con lo snapshot
         ServerPlayNetworking.registerGlobalReceiver(

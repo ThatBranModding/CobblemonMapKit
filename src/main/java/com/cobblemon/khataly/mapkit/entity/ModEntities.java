@@ -16,7 +16,7 @@ public class ModEntities {
                 CobblemonMapKitMod.id("bicycle"),
                 EntityType.Builder
                         .<BicycleEntity>create(BicycleEntity::new, SpawnGroup.MISC)
-                        .dimensions(1.2f, 1.2f)    // width, height
+                        .dimensions(1.1f, 1.1f)    // width, height
                         .maxTrackingRange(64)
                         .trackingTickInterval(1)
                         .build()

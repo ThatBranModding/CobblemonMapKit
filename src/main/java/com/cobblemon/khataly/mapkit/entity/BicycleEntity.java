@@ -1,6 +1,7 @@
 package com.cobblemon.khataly.mapkit.entity;
 
 import com.cobblemon.khataly.mapkit.item.ModItems;
+import com.cobblemon.khataly.mapkit.sound.ModSounds;
 import net.minecraft.entity.AnimationState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -123,7 +124,7 @@ public class BicycleEntity extends PathAwareEntity {
             sw.spawnParticles(ParticleTypes.CLOUD,
                     this.getX(), this.getY() + 0.3, this.getZ(),
                     4, 0.12, 0.0, 0.12, 0.01);
-            this.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), 0.35f, 1.2f);
+            this.playSound(ModSounds.BIKE_JUMP, 0.35f, 1.2f);
         }
 
         // aggiorna posizione del rider in tempo reale

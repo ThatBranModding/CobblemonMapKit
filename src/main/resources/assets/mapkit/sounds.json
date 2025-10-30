@@ -47,6 +47,18 @@
       "mapkit:climbable_rock"
     ]
   },
+  "bike_bell": {
+    "subtitles": "sounds.mapkit.bike_bell",
+    "sounds": [
+      "mapkit:bike_bell"
+    ]
+  },
+  "bike_jump": {
+    "subtitles": "sounds.mapkit.bike_jump",
+    "sounds": [
+      "mapkit:bike_jump"
+    ]
+  },
   "teleport_block": {
     "subtitles": "sounds.mapkit.teleport_block",
     "sounds": [

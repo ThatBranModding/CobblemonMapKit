@@ -1,6 +1,7 @@
 package com.cobblemon.khataly.mapkit.item.custom;
 
 import com.cobblemon.khataly.mapkit.entity.BicycleEntity;
+import com.cobblemon.khataly.mapkit.sound.ModSounds;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -36,6 +37,13 @@ public class BicycleItem extends Item {
             spawnPos = spawnPos.up();
         }
 
+        ((ServerWorld) world).playSound(
+                null,                           // null = udibile da tutti i giocatori nelle vicinanze
+                player.getX(), player.getY(), player.getZ(),
+                ModSounds.BIKE_BELL,    // usa .value() se BIKE_BELL è RegistryEntry<SoundEvent>
+                net.minecraft.sound.SoundCategory.PLAYERS,
+                1f, 1f
+        );
         BicycleEntity bike = BicycleEntity.spawn((ServerWorld) world, spawnPos, player);
         if (bike != null) {
             player.startRiding(bike, true);
