@@ -12,6 +12,7 @@ import com.cobblemon.khataly.mapkit.item.ModItemGroups;
 import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.ModNetworking;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeTagUseHandler;
+import com.cobblemon.khataly.mapkit.networking.manager.TeleportAnimationManager;
 import com.cobblemon.khataly.mapkit.screen.ModScreenHandlers;
 import com.cobblemon.khataly.mapkit.sound.ModSounds;
 import net.fabricmc.api.ModInitializer;
@@ -51,7 +52,7 @@ public class CobblemonMapKitMod implements ModInitializer {
         GrassEncounterTicker.register();
         ServerTickEvents.END_SERVER_TICK.register(ModNetworking::tick);
         ModEntities.register();
-
+        TeleportAnimationManager.register();
         // 🚲 Switch gear with right-click while riding (works with or without an item in hand)
         UseItemCallback.EVENT.register((player, world, hand) -> {
             if (player.hasVehicle() && player.getVehicle() instanceof BicycleEntity bike) {
