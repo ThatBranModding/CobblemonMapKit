@@ -21,8 +21,8 @@ public class ModScreenHandlers {
             Registry.register(Registries.SCREEN_HANDLER, Identifier.of(CobblemonMapKitMod.MOD_ID, "cut_screen_handler"),
                     new ExtendedScreenHandlerType<>(CutScreenHandler::new, BlockPos.PACKET_CODEC));
 
-    public static final ScreenHandlerType<StrengthScreenHandler> STRENGHT_SCREEN_HANDLER =
-            Registry.register(Registries.SCREEN_HANDLER, Identifier.of(CobblemonMapKitMod.MOD_ID, "strenght_screen_handler"),
+    public static final ScreenHandlerType<StrengthScreenHandler> STRENGTH_SCREEN_HANDLER =
+            Registry.register(Registries.SCREEN_HANDLER, Identifier.of(CobblemonMapKitMod.MOD_ID, "strength_screen_handler"),
                     new ExtendedScreenHandlerType<>(StrengthScreenHandler::new, BlockPos.PACKET_CODEC));
 
     public static final ScreenHandlerType<RockClimbScreenHandler> ROCKCLIMB_SCREEN_HANDLER =

@@ -17,7 +17,7 @@ public class StrengthScreenHandler extends ScreenHandler {
     }
 
     public StrengthScreenHandler(int syncId, PlayerInventory playerInventory, BlockEntity blockEntity) {
-        super(ModScreenHandlers.STRENGHT_SCREEN_HANDLER, syncId);
+        super(ModScreenHandlers.STRENGTH_SCREEN_HANDLER, syncId);
 
     }
 

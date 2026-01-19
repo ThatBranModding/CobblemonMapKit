@@ -57,7 +57,7 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
     private void registerScreensAndBlocks() {
         HandledScreens.register(ModScreenHandlers.ROCK_SMASH_SCREEN_HANDLER, RockSmashScreen::new);
         HandledScreens.register(ModScreenHandlers.CUT_SCREEN_HANDLER,        CutScreen::new);
-        HandledScreens.register(ModScreenHandlers.STRENGHT_SCREEN_HANDLER,   StrengthScreen::new);
+        HandledScreens.register(ModScreenHandlers.STRENGTH_SCREEN_HANDLER,   StrengthScreen::new);
         HandledScreens.register(ModScreenHandlers.ROCKCLIMB_SCREEN_HANDLER,  RockClimbScreen::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.CLIMBABLE_ROCK,   RenderLayer.getCutout());

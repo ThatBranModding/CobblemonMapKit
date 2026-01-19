@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 public record StrengthPacketC2S(BlockPos pos) implements CustomPayload {
-    public static final Identifier ID_RAW = Identifier.of(CobblemonMapKitMod.MOD_ID, "strenght_request");
+    public static final Identifier ID_RAW = Identifier.of(CobblemonMapKitMod.MOD_ID, "strength_request");
     public static final Id<StrengthPacketC2S> ID = new Id<>(ID_RAW);
 
     public static final PacketCodec<RegistryByteBuf, StrengthPacketC2S> CODEC =
