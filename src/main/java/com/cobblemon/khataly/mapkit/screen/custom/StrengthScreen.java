@@ -15,7 +15,7 @@ import net.minecraft.util.Identifier;
 
 public class StrengthScreen extends HandledScreen<StrengthScreenHandler> {
     private static final Identifier GUI_TEXTURE =
-            Identifier.of(CobblemonMapKitMod.MOD_ID, "textures/gui/strenght/strenght_gui.png");
+            Identifier.of(CobblemonMapKitMod.MOD_ID, "textures/gui/strength/strength_gui.png");
 
     public StrengthScreen(StrengthScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
