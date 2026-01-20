@@ -11,17 +11,17 @@
   "item.mapkit.bicycle": "Bicycle",
   "item.mapkit.bicycle.enabled": "Bicycle enabled 🚲",
   "item.mapkit.bicycle.disabled": "Bicycle disabled",
-  "item.mapkit.bicycle.cannot_use_now": "You can’t use the bicycle right now.",
-  "message.mapkit.bike.auto_disabled": "Your bicycle has been automatically disabled.",
+  "item.mapkit.bicycle.cannot_use_now": "You can’t use the bicycle right now",
+  "message.mapkit.bike.auto_disabled": "Your bicycle has been automatically disabled",
 
   "item.mapkit.badge_case": "Badge Case",
   "item.mapkit.grass_wand": "Grass Wand",
   "tooltip.mapkit.badge_case.count": "%s / %s badges collected",
-  "tooltip.mapkit.badge_case.hint": "Right-click to open. Insert by using a badge. Shift + Right-click on a badge to remove.",
+  "tooltip.mapkit.badge_case.hint": "Right-click to open. Insert by using a badge. Shift + Right-click on a badge to remove",
   "tooltip.mapkit.badge_case.remove_hint": "Shift + Right-click to remove",
   "tooltip.mapkit.badge_case.polish_hint": "Left-drag to polish",
-  "msg.mapkit.badge_case.full": "BadgeBox is full (8/8)!",
-  "msg.mapkit.badge_case.missing": "You don't have a Badge Case in your inventory!",
+  "msg.mapkit.badge_case.full": "Your Badge Case is full",
+  "msg.mapkit.badge_case.missing": "You don't have a Badge Case in your inventory",
 
   "item.mapkit.running_shoes": "Running Shoes",
   "tooltip.mapkit.running_shoes": "+50% movement speed when worn",
@@ -45,5 +45,13 @@
   "item.mapkit.ice_badge": "Ice Badge",
   "item.mapkit.fighting_badge": "Fighting Badge",
   "item.mapkit.normal_badge": "Normal Badge",
-  "item.mapkit.flying_badge": "Flying Badge"
+  "item.mapkit.flying_badge": "Flying Badge",
+  "item.mapkit.curio_case": "Curio Case",
+  "tooltip.mapkit.curio_case.count": "%s/%s curios collected ",
+  "tooltip.mapkit.curio_case.hint": "Right-click a Curio item to store it",
+  "tooltip.mapkit.curio_case.remove_hint": "Shift + Right Click: remove",
+  "tooltip.mapkit.curio_case.polish_hint": "Left Click + Drag: polish",
+  "msg.mapkit.curio_case.missing": "You don't have a Curio Case in your inventory",
+  "msg.mapkit.curio_case.full": "Your Curio Case is full"
 }
+

@@ -46,6 +46,7 @@ public class ModItemGroups {
                         entries.add(ModItems.RUNNING_SHOES);
                         entries.add(ModItems.BICYCLE);
                         entries.add(ModItems.WAILMER_WATERING_CAN);
+                        entries.add(ModItems.CURIO_CASE);
                     }).build());
 
     public static void registerItemGroups(){

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    {"id":"fabrifrogeitems:champion_id","required":false},
+    {"id":"fabrifrogeitems:doro","required":false}
+  ]
+}

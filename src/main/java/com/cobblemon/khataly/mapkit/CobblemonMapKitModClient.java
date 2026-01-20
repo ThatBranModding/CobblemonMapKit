@@ -11,6 +11,7 @@ import com.cobblemon.khataly.mapkit.entity.render.ModEntityRenderers;
 import com.cobblemon.khataly.mapkit.event.client.ClientEventHandler;
 import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeBoxClientHandler;
+import com.cobblemon.khataly.mapkit.networking.handlers.CurioCaseClientHandler;
 import com.cobblemon.khataly.mapkit.networking.packet.RotatePlayerS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.bike.ToggleBikeGearC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.bike.BikeWheelieC2SPacket;
@@ -32,15 +33,10 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 
-/**
- * Client initializer for CobblemonMapKitMod.
- * Registers client-only UI, renderers, networking receivers and input handling.
- */
 public class CobblemonMapKitModClient implements ClientModInitializer {
 
-    // Edge-detection per gli input
-    private boolean wasUsePressed   = false; // right-click / "use" key
-    private boolean wasJumpPressed  = false; // space / "jump" key
+    private boolean wasUsePressed   = false;
+    private boolean wasJumpPressed  = false;
 
     @Override
     public void onInitializeClient() {
@@ -51,9 +47,6 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         registerBicycleInputHandlers();
     }
 
-    // =============================
-    // 📺 Screens & Block layers
-    // =============================
     private void registerScreensAndBlocks() {
         HandledScreens.register(ModScreenHandlers.ROCK_SMASH_SCREEN_HANDLER, RockSmashScreen::new);
         HandledScreens.register(ModScreenHandlers.CUT_SCREEN_HANDLER,        CutScreen::new);
@@ -66,11 +59,7 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         BlockEntityRendererFactories.register(ModBlockEntities.ULTRAHOLE_ROCK_BE, UltraHolePortalRenderer::new);
     }
 
-    // =============================
-    // 🎨 Renderers & Models
-    // =============================
     private void registerRenderers() {
-        // Esempio: stivali invisibili
         ArmorRenderer invisibleBoots = (matrices, vertexConsumers, stack, entity, slot, light, model) -> {};
         ArmorRenderer.register(invisibleBoots, ModItems.RUNNING_SHOES);
 
@@ -79,14 +68,12 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.BICYCLE, BicycleRenderer::new);
     }
 
-    // =============================
-    // 🔌 Client networking receivers (S2C)
-    // =============================
     private void registerClientReceivers() {
         BadgeBoxClientHandler.register();
+        CurioCaseClientHandler.register();
+
         GrassNetworkingInit.registerReceivers();
 
-        // Rotazione graduale del player (già presente)
         ClientPlayNetworking.registerGlobalReceiver(RotatePlayerS2CPacket.ID, (payload, ctx) -> {
             float total = payload.totalRotation();
             int ticks   = Math.max(1, payload.durationTicks());
@@ -97,17 +84,13 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         });
     }
 
-    // =============================
-    // ⚙️ Eventi client generali
-    // =============================
     private void registerClientEvents() {
         ClientEventHandler.register();
 
-        // Applica la rotazione ogni tick (già presente)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (ClientAnimationState.ticksRemaining > 0 && client.player != null) {
                 float delta = ClientAnimationState.rotationPerTick;
-                var   p     = client.player;
+                var p = client.player;
                 p.setYaw(p.getYaw() + delta);
                 p.setHeadYaw(p.getHeadYaw() + delta);
                 ClientAnimationState.ticksRemaining--;
@@ -118,9 +101,6 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         });
     }
 
-    // =============================
-    // 🚲 Input bici (gear + wheelie)
-    // =============================
     private void registerBicycleInputHandlers() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             final var player = client.player;
@@ -129,7 +109,6 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
             final boolean ridingBike = player.hasVehicle()
                     && player.getVehicle() instanceof com.cobblemon.khataly.mapkit.entity.BicycleEntity;
 
-            // ---- Right-click / Use (toggle gear quando MANO VUOTA) ----
             boolean usePressed  = client.options.useKey.isPressed();
             boolean useJustDown = usePressed && !wasUsePressed;
             wasUsePressed = usePressed;
@@ -138,7 +117,6 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new ToggleBikeGearC2SPacket());
             }
 
-            // ---- Space / Jump (wheelie on press, stop on release) ----
             boolean jumpPressed  = client.options.jumpKey.isPressed();
             boolean jumpChanged  = jumpPressed != wasJumpPressed;
             wasJumpPressed = jumpPressed;

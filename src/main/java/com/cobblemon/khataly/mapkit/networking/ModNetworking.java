@@ -7,6 +7,12 @@ import com.cobblemon.khataly.mapkit.networking.packet.badgebox.EjectBadgeC2SPack
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.OpenBadgeBoxS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.SyncBadgeBoxS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.badgebox.PolishBadgeC2SPacket;
+
+import com.cobblemon.khataly.mapkit.networking.packet.curiocase.EjectCurioC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.curiocase.OpenCurioCaseS2CPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.curiocase.SyncCurioCaseS2CPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.curiocase.PolishCurioC2SPacket;
+
 import com.cobblemon.khataly.mapkit.networking.packet.bike.BikeWheelieC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.bike.ToggleBikeGearC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.cut.CutPacketC2S;
@@ -36,7 +42,7 @@ public class ModNetworking {
 
     public static void registerPackets() {
         PayloadTypeRegistry.playC2S().register(PlaceGrassC2SPacket.ID, PlaceGrassC2SPacket.CODEC);
-        // ======= tuoi pacchetti esistenti =======
+
         PayloadTypeRegistry.playS2C().register(AnimationHMPacketS2C.ID, AnimationHMPacketS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(FlyMenuS2CPacket.ID,     FlyMenuS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FlashMenuS2CPacket.ID,   FlashMenuS2CPacket.CODEC);
@@ -61,14 +67,19 @@ public class ModNetworking {
         PayloadTypeRegistry.playS2C().register(OpenBadgeBoxS2CPacket.ID,  OpenBadgeBoxS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SyncBadgeBoxS2CPacket.ID,  SyncBadgeBoxS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(PolishBadgeC2SPacket.ID,   PolishBadgeC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,   EjectBadgeC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,    EjectBadgeC2SPacket.CODEC);
+
+        // ======= CurioCase =======
+        PayloadTypeRegistry.playS2C().register(OpenCurioCaseS2CPacket.ID, OpenCurioCaseS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SyncCurioCaseS2CPacket.ID, SyncCurioCaseS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(PolishCurioC2SPacket.ID,   PolishCurioC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(EjectCurioC2SPacket.ID,    EjectCurioC2SPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(GrassZonesSyncS2CPacket.ID, GrassZonesSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestZonesC2SPacket.ID,   RequestZonesC2SPacket.CODEC);
 
         PayloadTypeRegistry.playC2S().register(ToggleBikeGearC2SPacket.ID, ToggleBikeGearC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(BikeWheelieC2SPacket.ID, BikeWheelieC2SPacket.CODEC);
-
+        PayloadTypeRegistry.playC2S().register(BikeWheelieC2SPacket.ID,    BikeWheelieC2SPacket.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(
                 BikeWheelieC2SPacket.ID,
@@ -93,7 +104,6 @@ public class ModNetworking {
                 }
         );
 
-        // Receiver server: risponde con lo snapshot
         ServerPlayNetworking.registerGlobalReceiver(
                 RequestZonesC2SPacket.ID,
                 (payload, ctx) -> ctx.server().execute(() -> {
@@ -101,7 +111,6 @@ public class ModNetworking {
                     ServerPlayNetworking.send(ctx.player(), pkt);
                 })
         );
-
 
         // ======= Handlers =======
         RockSmashHandler.register();
@@ -112,7 +121,10 @@ public class ModNetworking {
         TeleportHandler.register();
         FlashHandler.register();
         UltraHoleHandler.register();
+
         BadgeBoxHandler.register();
+        CurioCaseHandler.register();
+
         GrassWandHandler.register();
     }
 

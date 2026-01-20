@@ -5,13 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b39f538f-0004-4040-97e6-a9eeeda397bf" name="Changes" comment="ora la lista di fly target è scrollabile">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/mapkit/textures/gui/strength/strength_gui.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/item/custom/CurioCaseItem.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/CurioCaseClientHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/CurioCaseHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/CurioTagUseHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/curiocase/CurioEntry.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/curiocase/EjectCurioC2SPacket.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/curiocase/OpenCurioCaseS2CPacket.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/curiocase/PolishCurioC2SPacket.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/curiocase/SyncCurioCaseS2CPacket.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/CurioCaseScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/mapkit/models/item/curio_case.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/mapkit/textures/gui/curio_case.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/mapkit/textures/item/curio_case.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/data/mapkit/tags/item/curios.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/CobblemonMapKitMod.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/CobblemonMapKitMod.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/CobblemonMapKitModClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/CobblemonMapKitModClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/strength/StrengthPacketC2S.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/strength/StrengthPacketC2S.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/ModScreenHandlers.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/ModScreenHandlers.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/StrengthScreenHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/StrengthScreenHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/mapkit/textures/gui/strenght/strenght_gui.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/item/ModItemGroups.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/item/ModItemGroups.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/item/ModItems.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/item/ModItems.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/mapkit/lang/en_us.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/mapkit/lang/en_us.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,7 +108,7 @@
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/branj/Documents/GitHub/CobblemonMapKit",
+    "last_opened_file_path": "C:/Users/branj/Documents/GitHub/CobblemonMapKit/src/main/resources/assets/mapkit/textures/gui",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.40689656",
@@ -103,18 +118,21 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\branj\Documents\GitHub\CobblemonMapKit\src\main\resources\assets\mapkit\textures\gui" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm\models\item" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm\sounds" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\java\com\cobblemon\khataly\modhm" />
-      <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\.gradle" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\branj\Documents\GitHub\CobblemonMapKit\src\main\resources\assets\mapkit\textures\gui" />
+      <recent name="C:\Users\branj\Documents\GitHub\CobblemonMapKit\src\main\resources\assets\mapkit\textures\item" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm\textures\item" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm\textures\gui" />
       <recent name="C:\Users\paolo\Desktop\MinecraftMod\Fabric 1.21.1\ModHM\src\main\resources\assets\modhm\sounds" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.cobblemon.khataly.mapkit.screen.custom" />
       <recent name="com.cobblemon.khataly.modhm.event.server" />
       <recent name="com.cobblemon.khataly.modhm.event.server.custom" />
       <recent name="com.cobblemon.khataly.modhm.networking.packet" />
