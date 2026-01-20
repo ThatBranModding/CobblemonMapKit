@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class GrassWandHandler {
-    private static final int MAX_SIDE = 64;
     private static final String NBT_MODE = "grass_mode"; // "tall" | "short"
 
     public static void register() {
@@ -49,10 +48,7 @@ public class GrassWandHandler {
         int minY = Math.min(a.getY(), b.getY());
         int maxY = Math.max(a.getY(), b.getY());
 
-        if ((maxX - minX + 1) > MAX_SIDE || (maxZ - minZ + 1) > MAX_SIDE) {
-            player.sendMessage(Text.literal("Area too large (max side " + MAX_SIDE + ")."), false);
-            return;
-        }
+        // Removed MAX_SIZE restriction: allow any selection size.
 
         // NUOVO: prevenzione overlap 3D (usa il range Y completo)
         if (GrassZonesConfig.overlaps(world.getRegistryKey(), minX, minZ, maxX, maxZ, minY, maxY)) {
@@ -64,13 +60,13 @@ public class GrassWandHandler {
         boolean tallMode = readTallMode(player);
 
         Block shortGrassBlock = resolveShortGrass();
-        int placed = 0;
+        long placed = 0L;
 
         // NUOVO: posizionamento erba su tutto il volume selezionato (scansione per-Y)
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    BlockPos pos   = new BlockPos(x, y, z);
+                    BlockPos pos = new BlockPos(x, y, z);
                     BlockPos below = pos.down();
 
                     if (!world.isAir(pos)) continue;
