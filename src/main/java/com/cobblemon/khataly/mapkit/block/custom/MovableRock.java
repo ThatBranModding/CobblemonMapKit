@@ -2,6 +2,8 @@ package com.cobblemon.khataly.mapkit.block.custom;
 
 import com.cobblemon.khataly.mapkit.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.mapkit.block.entity.custom.MovableRockEntity;
+import com.cobblemon.khataly.mapkit.networking.handlers.StrengthHandler;
+import com.cobblemon.khataly.mapkit.networking.manager.StrengthWindowManager;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -10,6 +12,7 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
@@ -59,13 +62,23 @@ public class MovableRock extends BlockWithEntity implements BlockEntityProvider 
 
     @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient) {
-            if (world.getBlockEntity(pos) instanceof MovableRockEntity movableRockEntity) {
-                player.openHandledScreen(movableRockEntity);
+        // client: return SUCCESS to avoid "fail" feel, server will decide behavior
+        if (world.isClient) return ActionResult.SUCCESS;
+
+        // Server-side
+        if (player instanceof ServerPlayerEntity sp) {
+            // If in the window, skip GUI/animation and move instantly
+            if (StrengthWindowManager.isActive(sp)) {
+                StrengthHandler.handleDirect(sp, pos);
+                return ActionResult.SUCCESS;
             }
-            return ActionResult.SUCCESS;
         }
-        return ActionResult.FAIL;
+
+        // Default behavior: open screen (existing animation flow)
+        if (world.getBlockEntity(pos) instanceof MovableRockEntity movableRockEntity) {
+            player.openHandledScreen(movableRockEntity);
+        }
+        return ActionResult.SUCCESS;
     }
 
     @Override
@@ -73,7 +86,7 @@ public class MovableRock extends BlockWithEntity implements BlockEntityProvider 
         return new MovableRockEntity(pos, state);
     }
 
-    // 🔽 Gravità
+    // 🔽 Gravity
     @Override
     public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
         world.scheduleBlockTick(pos, this, 2);
@@ -82,18 +95,18 @@ public class MovableRock extends BlockWithEntity implements BlockEntityProvider 
     @Override
     public void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
         if (canFallThrough(world.getBlockState(pos.down())) && pos.getY() >= world.getBottomY()) {
-            // Rimuovi BlockEntity
+            // Remove BlockEntity
             BlockEntity be = world.getBlockEntity(pos);
             world.removeBlockEntity(pos);
 
-            // Crea FallingBlockEntity
+            // Create FallingBlockEntity
             FallingBlockEntity falling = FallingBlockEntity.spawnFromBlock(world, pos, state);
 
             if (be instanceof MovableRockEntity rockEntity) {
                 falling.blockEntityData = rockEntity.createNbtWithIdentifyingData(world.getRegistryManager());
             }
 
-            // 🔽 Marca l’entità per riconoscerla dopo
+            // Mark entity
             falling.addCommandTag("movable_rock");
             falling.addCommandTag("origin_" + pos.toShortString());
         }

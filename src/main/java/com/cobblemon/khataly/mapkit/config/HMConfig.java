@@ -18,6 +18,7 @@ public class HMConfig {
             .setPrettyPrinting()
             .serializeNulls()
             .create();
+
     private static final File CONFIG_FILE = new File("config/cobblemonmapkit/hm.json");
 
     // --- Respawn times ---
@@ -39,9 +40,16 @@ public class HMConfig {
     public static RequiredItem ULTRAHOLE = new RequiredItem(null, "❌ You need Ultrabeast to summon a Ultra Hole!");
 
     // --- UltraHole default settings ---
-    public static UltraHoleSettings ULTRAHOLE_SETTINGS = new UltraHoleSettings("minecraft:the_end", 0, 64, 0, 800); // default durata 200 tick
+    public static UltraHoleSettings ULTRAHOLE_SETTINGS =
+            new UltraHoleSettings("minecraft:the_end", 0, 64, 0, 800);
 
-    // --- Load config from JSON ---
+    // --- Strength animation window ---
+    public static StrengthAnimationWindow STRENGTH_ANIMATION_WINDOW =
+            new StrengthAnimationWindow(false, 120);
+
+    // ------------------------------------------------------------
+    // LOAD
+    // ------------------------------------------------------------
     public static void load() {
         try {
             if (!CONFIG_FILE.exists()) {
@@ -51,13 +59,13 @@ public class HMConfig {
 
             String jsonContent = Files.readString(CONFIG_FILE.toPath());
 
-            if (!jsonContent.contains("\"respawn_time_seconds\"") ||
-                    !jsonContent.contains("\"flash_duration_seconds\"") ||
-                    !jsonContent.contains("\"required_items\"") ||
-                    !jsonContent.contains("\"ultrahole_settings\"")) {
+            if (!jsonContent.contains("\"respawn_time_seconds\"")
+                    || !jsonContent.contains("\"flash_duration_seconds\"")
+                    || !jsonContent.contains("\"required_items\"")
+                    || !jsonContent.contains("\"ultrahole_settings\"")) {
 
-                LOGGER.warn("⚠️ Config obsolete or corrupted, regenerating con valori di default.");
-                if (!CONFIG_FILE.delete()) LOGGER.error("⚠️ Cannot delete config file: {}", CONFIG_FILE.getAbsolutePath());
+                LOGGER.warn("⚠️ Config obsolete or corrupted, regenerating defaults.");
+                CONFIG_FILE.delete();
                 save();
                 return;
             }
@@ -66,36 +74,36 @@ public class HMConfig {
             ConfigData data = GSON.fromJson(reader, ConfigData.class);
             reader.close();
 
-            boolean missingItem = data.required_items == null
-                    || data.required_items.rocksmash == null
-                    || data.required_items.fly == null
-                    || data.required_items.cut == null
-                    || data.required_items.strength == null
-                    || data.required_items.flash == null
-                    || data.required_items.teleport == null
-                    || data.required_items.rockclimb == null
-                    || data.required_items.ultrahole == null
-                    || data.ultrahole_settings == null
-                    || data.ultrahole_settings.destinationDimension == null;
+            boolean missing =
+                    data.required_items == null
+                            || data.required_items.rocksmash == null
+                            || data.required_items.fly == null
+                            || data.required_items.cut == null
+                            || data.required_items.strength == null
+                            || data.required_items.flash == null
+                            || data.required_items.teleport == null
+                            || data.required_items.rockclimb == null
+                            || data.required_items.ultrahole == null
+                            || data.ultrahole_settings == null
+                            || data.ultrahole_settings.destinationDimension == null;
 
-            if (missingItem) {
-                LOGGER.warn("⚠️ Uno o più RequiredItems o UltraHole settings mancanti, rigenero il config.");
-                if (!CONFIG_FILE.delete()) LOGGER.error("⚠️ Cannot delete config file: {}", CONFIG_FILE.getAbsolutePath());
+            if (missing) {
+                LOGGER.warn("⚠️ Missing required config entries, regenerating.");
+                CONFIG_FILE.delete();
                 save();
                 return;
             }
 
-            // Load respawn times
             if (data.respawn_time_seconds != null) {
                 ROCKSMASH_RESPAWN = data.respawn_time_seconds.rocksmash;
                 CUT_RESPAWN = data.respawn_time_seconds.cut;
                 STRENGTH_RESPAWN = data.respawn_time_seconds.strength;
             }
 
-            // Load flash duration
-            if (data.flash_duration_seconds != null) FLASH_DURATION = data.flash_duration_seconds;
+            if (data.flash_duration_seconds != null) {
+                FLASH_DURATION = data.flash_duration_seconds;
+            }
 
-            // Load required items
             ROCKSMASH = data.required_items.rocksmash;
             FLY = data.required_items.fly;
             CUT = data.required_items.cut;
@@ -105,21 +113,30 @@ public class HMConfig {
             ROCKCLIMB = data.required_items.rockclimb;
             ULTRAHOLE = data.required_items.ultrahole;
 
-            // Load UltraHole settings
             ULTRAHOLE_SETTINGS = data.ultrahole_settings;
 
+            // Strength animation window (optional)
+            if (data.strength_animation_window != null) {
+                if (data.strength_animation_window.seconds < 0)
+                    data.strength_animation_window.seconds = 0;
+
+                STRENGTH_ANIMATION_WINDOW = data.strength_animation_window;
+            } else {
+                STRENGTH_ANIMATION_WINDOW = new StrengthAnimationWindow(false, 120);
+            }
+
         } catch (IOException e) {
-            LOGGER.error("Error loading configuration file", e);
+            LOGGER.error("Error loading HM config", e);
         }
     }
 
-    // --- Save config to JSON ---
+    // ------------------------------------------------------------
+    // SAVE
+    // ------------------------------------------------------------
     public static void save() {
         try {
             File parent = CONFIG_FILE.getParentFile();
-            if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                LOGGER.warn("⚠️ Cannot create configuration directory: {}", parent.getAbsolutePath());
-            }
+            if (parent != null && !parent.exists()) parent.mkdirs();
 
             ConfigData data = new ConfigData();
 
@@ -138,21 +155,28 @@ public class HMConfig {
             data.required_items.ultrahole = ULTRAHOLE;
 
             data.ultrahole_settings = ULTRAHOLE_SETTINGS;
+            data.strength_animation_window = STRENGTH_ANIMATION_WINDOW;
 
             FileWriter writer = new FileWriter(CONFIG_FILE);
             GSON.toJson(data, writer);
             writer.close();
         } catch (IOException e) {
-            LOGGER.error("Error saving configuration file", e);
+            LOGGER.error("Error saving HM config", e);
         }
     }
 
-    // --- Internal classes for JSON ---
+    // ------------------------------------------------------------
+    // INTERNAL JSON CLASSES
+    // ------------------------------------------------------------
+
     private static class ConfigData {
         RespawnTimes respawn_time_seconds = new RespawnTimes();
         Integer flash_duration_seconds = FLASH_DURATION;
         RequiredItems required_items = new RequiredItems();
         UltraHoleSettings ultrahole_settings = new UltraHoleSettings();
+
+        // IMPORTANT: no static default here
+        StrengthAnimationWindow strength_animation_window;
     }
 
     private static class RespawnTimes {
@@ -166,34 +190,32 @@ public class HMConfig {
         public String message;
 
         public RequiredItem() {}
-        public RequiredItem(String item, String message) { this.item = item; this.message = message; }
+        public RequiredItem(String item, String message) {
+            this.item = item;
+            this.message = message;
+        }
     }
 
     private static class RequiredItems {
-        RequiredItem rocksmash = null;
-        RequiredItem fly = null;
-        RequiredItem cut = null;
-        RequiredItem strength = null;
-        RequiredItem flash = null;
-        RequiredItem teleport = null;
-        RequiredItem rockclimb = null;
-        RequiredItem ultrahole = null;
+        RequiredItem rocksmash;
+        RequiredItem fly;
+        RequiredItem cut;
+        RequiredItem strength;
+        RequiredItem flash;
+        RequiredItem teleport;
+        RequiredItem rockclimb;
+        RequiredItem ultrahole;
     }
 
-    // --- UltraHole settings with coordinates and duration ---
     public static class UltraHoleSettings {
         public String destinationDimension;
         public double x;
         public double y;
         public double z;
-        public int durationTicks; // durata del portale in tick
+        public int durationTicks;
 
         public UltraHoleSettings() {
-            this.destinationDimension = "minecraft:the_end";
-            this.x = 0;
-            this.y = 64;
-            this.z = 0;
-            this.durationTicks = 800;
+            this("minecraft:the_end", 0, 64, 0, 800);
         }
 
         public UltraHoleSettings(String destinationDimension, double x, double y, double z, int durationTicks) {
@@ -202,6 +224,20 @@ public class HMConfig {
             this.y = y;
             this.z = z;
             this.durationTicks = durationTicks;
+        }
+    }
+
+    public static class StrengthAnimationWindow {
+        public boolean enabled;
+        public int seconds;
+
+        public StrengthAnimationWindow() {
+            this(false, 120);
+        }
+
+        public StrengthAnimationWindow(boolean enabled, int seconds) {
+            this.enabled = enabled;
+            this.seconds = seconds;
         }
     }
 }
