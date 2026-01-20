@@ -1,9 +1,9 @@
 package com.cobblemon.khataly.mapkit.command;
 
-
 import com.cobblemon.khataly.mapkit.command.custom.FlyTargetCommand;
 import com.cobblemon.khataly.mapkit.command.custom.GrassZoneCommands;
 import com.cobblemon.khataly.mapkit.command.custom.LevelCapCommands;
+import com.cobblemon.khataly.mapkit.command.custom.MapKitReloadCommand;
 import com.cobblemon.khataly.mapkit.command.custom.TeleportBlockCommands;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.server.command.ServerCommandSource;
@@ -15,7 +15,8 @@ public class ModCommands {
         GrassZoneCommands.register(dispatcher);
         LevelCapCommands.register(dispatcher);
         TeleportBlockCommands.register(dispatcher);
+
+        // NEW: /mapkit reload
+        MapKitReloadCommand.register(dispatcher);
     }
-
-
 }

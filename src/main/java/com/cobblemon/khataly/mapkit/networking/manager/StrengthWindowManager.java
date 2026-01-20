@@ -58,4 +58,12 @@ public final class StrengthWindowManager {
     public static void clear(ServerPlayerEntity player) {
         EXPIRY_TICK.remove(player.getUuid());
     }
+
+    /**
+     * Clears ALL Strength animation windows.
+     * Used when configs are reloaded so new values apply immediately.
+     */
+    public static void clearAll() {
+        EXPIRY_TICK.clear();
+    }
 }
