@@ -19,15 +19,19 @@ import java.util.*;
  *  - Una zona per file: config/cobblemonmapkit/zones/<nome>.json
  *  - Nome obbligatorio e persistenza del nome nel filename
  *  - Migrazione da formati legacy (grass_zones.json e/o singolo campo y)
+ *
+ * Schema v5:
+ *  - Adds per-spawn "medium": "land" | "water" | "both" (default both)
  */
 public class GrassZonesConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File ZONES_DIR = new File("config/cobblemonmapkit/zones");
-    /** Bump per minY/maxY e supporto retrocompatibile al precedente campo singolo "y". */
-    private static final int CURRENT_SCHEMA_VERSION = 4;
+    /** Bump per minY/maxY + medium support; retrocompat con campo singolo "y" e spawn senza medium. */
+    private static final int CURRENT_SCHEMA_VERSION = 5;
 
     public enum TimeBand { DAY, NIGHT, BOTH }
+    public enum MediumBand { LAND, WATER, BOTH }
 
     // ======== DATA MODEL ========
     public static final class SpawnEntry {
@@ -39,19 +43,29 @@ public class GrassZonesConfig {
         /** Variante opzionale (es. "alola", "hisui", "galar", ...). */
         public final String aspect;
 
-        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time, String aspect) {
+        /** NEW: medium restriction for encounters. Defaults to BOTH. */
+        public final MediumBand medium;
+
+        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time, String aspect, MediumBand medium) {
             this.species = species;
             this.minLevel = minLevel;
             this.maxLevel = maxLevel;
             this.weight = weight;
             this.time = (time == null) ? TimeBand.BOTH : time;
             this.aspect = (aspect != null && !aspect.isBlank()) ? aspect : null;
+            this.medium = (medium == null) ? MediumBand.BOTH : medium;
         }
+
+        public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time, String aspect) {
+            this(species, minLevel, maxLevel, weight, time, aspect, MediumBand.BOTH);
+        }
+
         public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time) {
-            this(species, minLevel, maxLevel, weight, time, null);
+            this(species, minLevel, maxLevel, weight, time, null, MediumBand.BOTH);
         }
+
         public SpawnEntry(String species, int minLevel, int maxLevel, int weight) {
-            this(species, minLevel, maxLevel, weight, TimeBand.BOTH, null);
+            this(species, minLevel, maxLevel, weight, TimeBand.BOTH, null, MediumBand.BOTH);
         }
     }
 
@@ -135,7 +149,7 @@ public class GrassZonesConfig {
         String worldKey;
         int minX, minZ, maxX, maxZ;
 
-        /** NUOVO: range verticale; legacy: solo y. */
+        /** range verticale; legacy: solo y. */
         Integer minY;
         Integer maxY;
 
@@ -149,8 +163,11 @@ public class GrassZonesConfig {
     private static class SpawnData {
         String species;
         int minLevel, maxLevel, weight;
-        String time;   // "day" | "night" | "both"
-        String aspect; // opzionale
+        String time;    // "day" | "night" | "both"
+        String aspect;  // opzionale
+
+        // NEW: medium restriction
+        String medium;  // "land" | "water" | "both"  (default "both")
     }
 
     // ======== IN-MEMORY STATE ========
@@ -191,7 +208,7 @@ public class GrassZonesConfig {
         CobblemonMapKitMod.LOGGER.info("[GrassZonesConfig] Loaded {} zones ({} invalid).", ok, bad);
     }
 
-    /** Overlap 3D con Y puntuale (compat: controlla se la proiezione XY si sovrappone e il punto Y cade nel range della zona). */
+    /** Overlap 3D con Y puntuale. */
     public static boolean overlaps(RegistryKey<World> worldKey, int minX, int minZ, int maxX, int maxZ, int y) {
         int aMinX = Math.min(minX, maxX);
         int aMaxX = Math.max(minX, maxX);
@@ -286,7 +303,7 @@ public class GrassZonesConfig {
         return addZone(name, worldKey, minX, minZ, maxX, maxZ, y, y, spawns, shinyOdds);
     }
 
-    /** NUOVO: creazione zona con range verticale completo. */
+    /** creazione zona con range verticale completo. */
     public static UUID addZone(String name,
                                RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
@@ -295,7 +312,7 @@ public class GrassZonesConfig {
         return addZone(name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, spawns, -1);
     }
 
-    /** NUOVO: creazione zona con range verticale e shiny odds. */
+    /** creazione zona con range verticale e shiny odds. */
     public static UUID addZone(String name,
                                RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
@@ -459,6 +476,15 @@ public class GrassZonesConfig {
         };
     }
 
+    private static MediumBand parseMedium(String s) {
+        if (s == null) return MediumBand.BOTH;
+        return switch (s.toLowerCase(Locale.ROOT)) {
+            case "land" -> MediumBand.LAND;
+            case "water" -> MediumBand.WATER;
+            default -> MediumBand.BOTH;
+        };
+    }
+
     /** Gestisce il risultato di mkdirs(), evitando warning e segnalando eventuali problemi. */
     private static void ensureDir() {
         File parent = ZONES_DIR.getParentFile();
@@ -482,9 +508,8 @@ public class GrassZonesConfig {
     }
 
     private static String sanitizeForFilename(String name) {
-        // rimuove accenti e caratteri non validi, compatta spazi, tronca lunghezze eccessive
         String n = Normalizer.normalize(name, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
-        n = n.replaceAll("[^\\w\\-.\\s]", "_").trim(); // keep letters, digits, _, -, ., space
+        n = n.replaceAll("[^\\w\\-.\\s]", "_").trim();
         n = n.replaceAll("\\s+", " ");
         if (n.isEmpty()) n = "Zone";
         if (n.length() > 80) n = n.substring(0, 80).trim();
@@ -532,7 +557,6 @@ public class GrassZonesConfig {
             Zone z = readZoneFile(f);
             return !z.id().equals(ownerId);
         } catch (Exception e) {
-            // file presente ma illeggibile => trattalo come occupato
             return true;
         }
     }
@@ -583,8 +607,8 @@ public class GrassZonesConfig {
         zd.name = z.name();
         zd.worldKey = z.worldKey().getValue().toString();
         zd.minX = z.minX(); zd.minZ = z.minZ(); zd.maxX = z.maxX(); zd.maxZ = z.maxZ();
-        zd.minY = z.minY(); zd.maxY = z.maxY(); // nuovo formato
-        zd.y = null; // non scriviamo più il campo legacy
+        zd.minY = z.minY(); zd.maxY = z.maxY();
+        zd.y = null;
         zd.timeCreated = z.timeCreated();
         zd.shinyOdds = (z.shinyOdds() <= 0) ? -1 : z.shinyOdds();
 
@@ -597,6 +621,11 @@ public class GrassZonesConfig {
             sd.weight = se.weight;
             sd.time = se.time.name().toLowerCase(Locale.ROOT);
             if (se.aspect != null && !se.aspect.isBlank()) sd.aspect = se.aspect;
+
+            // IMPORTANT: always write medium, default "both"
+            MediumBand m = (se.medium == null) ? MediumBand.BOTH : se.medium;
+            sd.medium = m.name().toLowerCase(Locale.ROOT);
+
             zd.spawns.add(sd);
         }
         return zd;
@@ -608,10 +637,8 @@ public class GrassZonesConfig {
         if (wid == null) throw new IllegalArgumentException("bad worldKey");
         RegistryKey<World> wk = RegistryKey.of(RegistryKeys.WORLD, wid);
 
-        // Migrazione: se minY/maxY mancano ma c'è y singolo, usa y come range unitario
         int minY, maxY;
         if (zd.minY != null || zd.maxY != null) {
-            // Se uno solo è null, fallback all'altro
             int minY0 = zd.minY != null ? zd.minY : zd.maxY;
             int maxY0 = (zd.maxY != null) ? zd.maxY : minY0;
             minY = Math.min(minY0, maxY0);
@@ -620,7 +647,6 @@ public class GrassZonesConfig {
             minY = zd.y;
             maxY = zd.y;
         } else {
-            // Se manca tutto, fallback sicuro (es. 0..319 in 1.20, ma preferiamo range unitario neutro)
             CobblemonMapKitMod.LOGGER.warn("[GrassZonesConfig] Missing Y info for zone {}, defaulting to 0..0", zd.id);
             minY = 0; maxY = 0;
         }
@@ -633,8 +659,12 @@ public class GrassZonesConfig {
                     CobblemonMapKitMod.LOGGER.warn("[GrassZonesConfig] Invalid spawn in zone {}: {}", zd.id, sd);
                     continue;
                 }
+
+                TimeBand tb = parseTime(sd.time);
+                MediumBand mb = parseMedium(sd.medium); // default BOTH if missing
+
                 spawns.add(new SpawnEntry(
-                        sd.species, sd.minLevel, sd.maxLevel, sd.weight, parseTime(sd.time), sd.aspect
+                        sd.species, sd.minLevel, sd.maxLevel, sd.weight, tb, sd.aspect, mb
                 ));
             }
         }

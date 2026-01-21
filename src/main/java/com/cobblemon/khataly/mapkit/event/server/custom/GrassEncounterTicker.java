@@ -29,6 +29,7 @@ import java.util.*;
  * - Filtro DAY/NIGHT/BOTH;
  * - Shiny odds per zona (1/N; -1 = default globale);
  * - Aspect opzionale per variante regionale (es. "alola");
+ * - Medium per spawn (LAND/WATER/BOTH) -> decide se spawnare mentre sei in acqua o su terra;
  * - Non spawna se il player è già in battaglia;
  * - Se il player fugge dalla lotta, il selvatico viene despawnato.
  */
@@ -71,10 +72,10 @@ public class GrassEncounterTicker {
                         UUID wid = ACTIVE_WILD.remove(pid);
                         if (wid == null) return kotlin.Unit.INSTANCE;
 
-                        var sw = (net.minecraft.server.world.ServerWorld) player.getWorld();
+                        var sw = (ServerWorld) player.getWorld();
                         var ent = sw.getEntity(wid);
                         if (ent instanceof PokemonEntity pe && pe.isAlive() && !pe.isRemoved()) {
-                            pe.discard(); // despawn immediato del selvatico
+                            pe.discard();
                         }
                     } catch (Throwable ignored) {}
                     return kotlin.Unit.INSTANCE;
@@ -106,7 +107,6 @@ public class GrassEncounterTicker {
 
             // scegliamo la prima zona valida; si può randomizzare se serve
             GrassZonesConfig.Zone zone = zones.getFirst();
-            // (Niente check su Y singolo: il match per Y è già garantito da findAt)
 
             // già in battaglia? niente encounter
             if (isInBattle(player)) continue;
@@ -116,7 +116,12 @@ public class GrassEncounterTicker {
             if (rng.nextDouble() >= BASE_STEP_CHANCE) continue;
 
             // filtra spawns per fascia oraria
-            List<GrassZonesConfig.SpawnEntry> pool = filterByTime(zone.spawns(), world);
+            List<GrassZonesConfig.SpawnEntry> timeFiltered = filterByTime(zone.spawns(), world);
+            if (timeFiltered.isEmpty()) continue;
+
+            // NEW: filtra per medium (LAND/WATER/BOTH) usando enum, non stringhe
+            boolean inWater = isPlayerInWaterForEncounters(player);
+            List<GrassZonesConfig.SpawnEntry> pool = filterByMedium(timeFiltered, inWater);
             if (pool.isEmpty()) continue;
 
             // scelta pesata
@@ -130,7 +135,6 @@ public class GrassEncounterTicker {
             int shinyOdds = getZoneShinyOddsOrDefault(zone);
             boolean isShiny = rollShiny(rng, shinyOdds);
 
-            // singles
             BattleFormat format = BattleFormat.Companion.getGEN_9_SINGLES();
 
             if (startWildBattle(player, choice.species, level, format, isShiny, choice.aspect)) {
@@ -142,10 +146,23 @@ public class GrassEncounterTicker {
     /** Condizioni minime per il passo valido. */
     private static boolean isValidStepState(ServerPlayerEntity p) {
         if (p.isSpectator()) return false;
-        if (!p.isOnGround()) return false;
         if (p.hasVehicle()) return false;
+
+        // IMPORTANT:
+        // Prima avevi: !p.isOnGround() => niente acqua.
+        // Ora accettiamo sia "onGround" che "in acqua" (nuoto/cammino in acqua).
+        boolean onLand = p.isOnGround();
+        boolean inWater = isPlayerInWaterForEncounters(p);
+
+        if (!onLand && !inWater) return false;
+
         // evita incontri durante/alla soglia di una battaglia
         return !isInBattle(p);
+    }
+
+    private static boolean isPlayerInWaterForEncounters(ServerPlayerEntity p) {
+        // isSwimming() = animazione nuoto; isSubmergedInWater() = testa sott'acqua; isTouchingWater() = piedi/box in contatto
+        return p.isTouchingWater() || p.isSwimming() || p.isSubmergedInWater();
     }
 
     private static boolean isInBattle(ServerPlayerEntity player) {
@@ -164,8 +181,8 @@ public class GrassEncounterTicker {
         // Dimensioni senza skylight => non filtriamo
         if (!world.getDimension().hasSkyLight()) return entries;
 
-        long dayTime = world.getTimeOfDay() % 24000L; // 0..23999
-        boolean isDay = dayTime < 12000L;             // 0..11999 = giorno
+        long dayTime = world.getTimeOfDay() % 24000L;
+        boolean isDay = dayTime < 12000L;
 
         List<GrassZonesConfig.SpawnEntry> out = new ArrayList<>(entries.size());
         for (GrassZonesConfig.SpawnEntry e : entries) {
@@ -174,6 +191,29 @@ public class GrassEncounterTicker {
                 case BOTH -> out.add(e);
                 case DAY -> { if (isDay) out.add(e); }
                 case NIGHT -> { if (!isDay) out.add(e); }
+            }
+        }
+        return out;
+    }
+
+    /** NEW: filtra gli spawn per medium in base a se il player è in acqua. */
+    private static List<GrassZonesConfig.SpawnEntry> filterByMedium(List<GrassZonesConfig.SpawnEntry> entries, boolean inWater) {
+        if (entries == null || entries.isEmpty()) return Collections.emptyList();
+
+        List<GrassZonesConfig.SpawnEntry> out = new ArrayList<>(entries.size());
+        for (GrassZonesConfig.SpawnEntry e : entries) {
+            if (e == null) continue;
+
+            GrassZonesConfig.MediumBand m = (e.medium == null)
+                    ? GrassZonesConfig.MediumBand.BOTH
+                    : e.medium;
+
+            if (m == GrassZonesConfig.MediumBand.BOTH) {
+                out.add(e);
+            } else if (m == GrassZonesConfig.MediumBand.WATER) {
+                if (inWater) out.add(e);
+            } else { // LAND
+                if (!inWater) out.add(e);
             }
         }
         return out;
@@ -195,20 +235,15 @@ public class GrassEncounterTicker {
         return null;
     }
 
-    /** Shiny odds della zona o default globale. */
     private static int getZoneShinyOddsOrDefault(GrassZonesConfig.Zone zone) {
         return (zone.shinyOdds() <= 0) ? DEFAULT_GLOBAL_SHINY_ODDS : zone.shinyOdds();
     }
 
-    /** 1 su N. */
     private static boolean rollShiny(Random rng, int odds) {
         if (odds <= 1) return true;
         return rng.nextInt(odds) == 0;
     }
 
-    /**
-     * Avvia una battle PvE 1v1; passa sempre il party; supporta shiny e aspect.
-     */
     private static boolean startWildBattle(ServerPlayerEntity player,
                                            String speciesId,
                                            int level,
@@ -219,7 +254,6 @@ public class GrassEncounterTicker {
         if (server == null) return false;
         if (!PlayerUtils.hasUsablePokemon(player)) return false;
 
-        // Non iniziare se già in battaglia
         if (isInBattle(player)) return false;
 
         String key = speciesId == null ? "" : speciesId.toLowerCase(Locale.ROOT);
@@ -231,7 +265,6 @@ public class GrassEncounterTicker {
         Pokemon pokemon = new Pokemon();
         pokemon.setSpecies(species);
 
-        // Aspect opzionale (variante regionale)
         if (aspect != null && !aspect.isBlank()) {
             pokemon.setForcedAspects(Collections.singleton(aspect.toLowerCase(Locale.ROOT)));
             try { pokemon.updateForm(); } catch (Throwable ignored) {}
@@ -244,14 +277,11 @@ public class GrassEncounterTicker {
 
         var sw = (ServerWorld) player.getWorld();
 
-        // -------- NUOVO: spawn alla stessa Y del player --------
-        // targetY = Y "reale" del player (non solo il BlockPos.getY()).
+        // spawn vicino al player
         final double targetY = player.getY();
-
-        // proviamo alcuni offset vicino al player mantenendo la stessa Y
-        // ordine: +X, -X, +Z, -Z, +X+Z, -X-Z
         Vec3d spawnPos = null;
-        Vec3d base = player.getPos(); // double-precision position
+        Vec3d base = player.getPos();
+
         Vec3d[] candidates = new Vec3d[] {
                 new Vec3d(base.x + 1.0, targetY, base.z),
                 new Vec3d(base.x - 1.0, targetY, base.z),
@@ -262,44 +292,39 @@ public class GrassEncounterTicker {
         };
 
         for (Vec3d cand : candidates) {
-            // centro del blocco più vicino
             BlockPos bp = BlockPos.ofFloored(cand.x, cand.y, cand.z);
-            // deve esserci aria nello spazio del Pokémon (grezzo: blocco target e quello sopra aria)
-            boolean airHere  = sw.isAir(bp);
-            boolean airAbove = sw.isAir(bp.up());
-            // e terreno solido sotto (per evitare di spawna­re sospesi)
-            boolean solidBelow = !sw.isAir(bp.down());
-            if (airHere && airAbove && solidBelow) {
+
+            // in acqua: permetti spawn anche se il blocco è acqua (non solo aria)
+            boolean spaceOk = sw.isAir(bp) || !sw.getFluidState(bp).isEmpty();
+            boolean aboveOk = sw.isAir(bp.up()) || !sw.getFluidState(bp.up()).isEmpty();
+
+            if (spaceOk && aboveOk) {
                 spawnPos = new Vec3d(bp.getX() + 0.5, targetY, bp.getZ() + 0.5);
                 break;
             }
         }
 
-        // fallback: comunque a +1 in X, stessa Y
         if (spawnPos == null) {
             spawnPos = new Vec3d(Math.floor(base.x) + 1.5, targetY, Math.floor(base.z) + 0.5);
         }
-        // -------------------------------------------------------
 
         PokemonEntity entity = pokemon.sendOut(sw, spawnPos, null, e -> null);
         if (entity == null) return false;
 
-        // Traccia selvatico per possibile despawn in caso di fuga
         ACTIVE_WILD.put(player.getUuid(), entity.getUuid());
 
         var party = Cobblemon.INSTANCE.getStorage().getParty(player);
 
-        // Avvia la battle dopo 1–2 tick per sicurezza
         server.execute(() -> server.execute(() -> {
             if (!entity.isRemoved() && entity.isAlive() && !isInBattle(player)) {
                 BattleBuilder.INSTANCE.pve(
                         player,
                         entity,
-                        null,        // leading
-                        format,      // singles
-                        false,       // cloneParties
-                        false,       // healFirst
-                        16f,         // fleeDistance
+                        null,
+                        format,
+                        false,
+                        false,
+                        16f,
                         party
                 );
             }
@@ -307,5 +332,4 @@ public class GrassEncounterTicker {
 
         return true;
     }
-
 }
