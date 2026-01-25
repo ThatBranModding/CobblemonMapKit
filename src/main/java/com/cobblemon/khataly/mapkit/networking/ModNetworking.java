@@ -34,6 +34,7 @@ import com.cobblemon.khataly.mapkit.networking.packet.teleport.TeleportPacketC2S
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHoleMenuC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHoleMenuS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHolePacketC2S;
+
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
@@ -41,45 +42,57 @@ import net.minecraft.server.MinecraftServer;
 public class ModNetworking {
 
     public static void registerPackets() {
+        // ======= Registry: C2S =======
         PayloadTypeRegistry.playC2S().register(PlaceGrassC2SPacket.ID, PlaceGrassC2SPacket.CODEC);
 
-        PayloadTypeRegistry.playS2C().register(AnimationHMPacketS2C.ID, AnimationHMPacketS2C.CODEC);
-        PayloadTypeRegistry.playS2C().register(FlyMenuS2CPacket.ID,     FlyMenuS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(FlashMenuS2CPacket.ID,   FlashMenuS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(TeleportMenuS2CPacket.ID, TeleportMenuS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(UltraHoleMenuS2CPacket.ID, UltraHoleMenuS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(RotatePlayerS2CPacket.ID, RotatePlayerS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RockSmashPacketC2S.ID,    RockSmashPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(CutPacketC2S.ID,          CutPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(StrengthPacketC2S.ID,     StrengthPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(RockClimbPacketC2S.ID,    RockClimbPacketC2S.CODEC);
 
-        PayloadTypeRegistry.playC2S().register(RockSmashPacketC2S.ID,   RockSmashPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(CutPacketC2S.ID,         CutPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(StrengthPacketC2S.ID,    StrengthPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(RockClimbPacketC2S.ID,   RockClimbPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(FlyPacketC2S.ID,         FlyPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(FlyMenuC2SPacket.ID,     FlyMenuC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(FlashPacketC2S.ID,       FlashPacketC2S.CODEC);
-        PayloadTypeRegistry.playC2S().register(FlashMenuC2SPacket.ID,   FlashMenuC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(TeleportPacketC2S.ID,    TeleportPacketC2S.CODEC);
+        // Fly execute (NOTE: this is now worldKeyId + pos in the packet)
+        PayloadTypeRegistry.playC2S().register(FlyPacketC2S.ID,          FlyPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(FlyMenuC2SPacket.ID,      FlyMenuC2SPacket.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(FlashPacketC2S.ID,        FlashPacketC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(FlashMenuC2SPacket.ID,    FlashMenuC2SPacket.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(TeleportPacketC2S.ID,     TeleportPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(TeleportMenuC2SPacket.ID, TeleportMenuC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(UltraHolePacketC2S.ID,   UltraHolePacketC2S.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(UltraHolePacketC2S.ID,    UltraHolePacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(UltraHoleMenuC2SPacket.ID, UltraHoleMenuC2SPacket.CODEC);
 
-        // ======= BadgeBox =======
-        PayloadTypeRegistry.playS2C().register(OpenBadgeBoxS2CPacket.ID,  OpenBadgeBoxS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(SyncBadgeBoxS2CPacket.ID,  SyncBadgeBoxS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(PolishBadgeC2SPacket.ID,   PolishBadgeC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,    EjectBadgeC2SPacket.CODEC);
-
-        // ======= CurioCase =======
-        PayloadTypeRegistry.playS2C().register(OpenCurioCaseS2CPacket.ID, OpenCurioCaseS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(SyncCurioCaseS2CPacket.ID, SyncCurioCaseS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(PolishCurioC2SPacket.ID,   PolishCurioC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(EjectCurioC2SPacket.ID,    EjectCurioC2SPacket.CODEC);
-
-        PayloadTypeRegistry.playS2C().register(GrassZonesSyncS2CPacket.ID, GrassZonesSyncS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RequestZonesC2SPacket.ID,   RequestZonesC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RequestZonesC2SPacket.ID,  RequestZonesC2SPacket.CODEC);
 
         PayloadTypeRegistry.playC2S().register(ToggleBikeGearC2SPacket.ID, ToggleBikeGearC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(BikeWheelieC2SPacket.ID,    BikeWheelieC2SPacket.CODEC);
+
+        // BadgeBox
+        PayloadTypeRegistry.playC2S().register(PolishBadgeC2SPacket.ID,   PolishBadgeC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(EjectBadgeC2SPacket.ID,    EjectBadgeC2SPacket.CODEC);
+
+        // CurioCase
+        PayloadTypeRegistry.playC2S().register(PolishCurioC2SPacket.ID,   PolishCurioC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(EjectCurioC2SPacket.ID,    EjectCurioC2SPacket.CODEC);
+
+        // ======= Registry: S2C =======
+        PayloadTypeRegistry.playS2C().register(AnimationHMPacketS2C.ID,    AnimationHMPacketS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(FlyMenuS2CPacket.ID,        FlyMenuS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(FlashMenuS2CPacket.ID,      FlashMenuS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(TeleportMenuS2CPacket.ID,   TeleportMenuS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(UltraHoleMenuS2CPacket.ID,  UltraHoleMenuS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(RotatePlayerS2CPacket.ID,   RotatePlayerS2CPacket.CODEC);
+
+        PayloadTypeRegistry.playS2C().register(OpenBadgeBoxS2CPacket.ID,   OpenBadgeBoxS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SyncBadgeBoxS2CPacket.ID,   SyncBadgeBoxS2CPacket.CODEC);
+
+        PayloadTypeRegistry.playS2C().register(OpenCurioCaseS2CPacket.ID,  OpenCurioCaseS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SyncCurioCaseS2CPacket.ID,  SyncCurioCaseS2CPacket.CODEC);
+
+        PayloadTypeRegistry.playS2C().register(GrassZonesSyncS2CPacket.ID, GrassZonesSyncS2CPacket.CODEC);
+
+        // ======= Inline Receivers =======
 
         ServerPlayNetworking.registerGlobalReceiver(
                 BikeWheelieC2SPacket.ID,
@@ -117,7 +130,10 @@ public class ModNetworking {
         CutHandler.register();
         StrengthHandler.register();
         RockClimbHandler.register();
+
+        // IMPORTANT: FlyHandler must be the UPDATED one that handles cross-dimension teleport
         FlyHandler.register();
+
         TeleportHandler.register();
         FlashHandler.register();
         UltraHoleHandler.register();

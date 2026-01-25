@@ -25,21 +25,12 @@ public record FlyMenuS2CPacket(
 
     public record FlyTargetEntry(String name, String worldKey, BlockPos pos) {}
 
-    // Codec manuale per UUID
-    private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC = new PacketCodec<RegistryByteBuf, UUID>() {
-        @Override
-        public UUID decode(RegistryByteBuf buf) {
-            long most = buf.readLong();
-            long least = buf.readLong();
-            return new UUID(most, least);
-        }
-
-        @Override
-        public void encode(RegistryByteBuf buf, UUID uuid) {
-            buf.writeLong(uuid.getMostSignificantBits());
-            buf.writeLong(uuid.getLeastSignificantBits());
-        }
-    };
+    // ✅ Works even when PacketCodecs.UUID doesn't exist + avoids ambiguous method refs
+    private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC =
+            PacketCodec.of(
+                    (uuid, buf) -> buf.writeUuid(uuid),
+                    (buf) -> buf.readUuid()
+            );
 
     private static final PacketCodec<RegistryByteBuf, FlyTargetEntry> ENTRY_CODEC = PacketCodec.tuple(
             PacketCodecs.STRING, FlyTargetEntry::name,

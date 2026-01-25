@@ -5,9 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b39f538f-0004-4040-97e6-a9eeeda397bf" name="Changes" comment="ora la lista di fly target è scrollabile">
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Client.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Client.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Server.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Server.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/GrassZonesConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/GrassZonesConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/event/server/custom/GrassEncounterTicker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/event/server/custom/GrassEncounterTicker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/FlyTargetConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/FlyTargetConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/FlyHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/FlyHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyMenuS2CPacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyMenuS2CPacket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyPacketC2S.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyPacketC2S.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/FlyTargetListScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/FlyTargetListScreen.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,24 +87,24 @@
     <option name="autoscrollFromSource" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.CobblemonMapKitMod [:dev.architectury.transformer.TransformerRuntime.main()].executor": "Run",
-    "Gradle.ModHM [:dev.architectury.transformer.TransformerRuntime.main()].executor": "Run",
-    "Gradle.fabric-java [:dev.architectury.transformer.TransformerRuntime.main()].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/branj/Documents/GitHub/CobblemonMapKit",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.40689656",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "MavenSettings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.CobblemonMapKitMod [:dev.architectury.transformer.TransformerRuntime.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModHM [:dev.architectury.transformer.TransformerRuntime.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.fabric-java [:dev.architectury.transformer.TransformerRuntime.main()].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/branj/Documents/GitHub/CobblemonMapKit&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.40689656&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;MavenSettings&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\branj\Documents\GitHub\CobblemonMapKit\src\main\resources\assets\mapkit\textures\gui" />

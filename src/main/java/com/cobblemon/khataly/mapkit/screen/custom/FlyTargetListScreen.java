@@ -7,15 +7,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FlyTargetListScreen extends Screen {
@@ -32,12 +28,9 @@ public class FlyTargetListScreen extends Screen {
     private static final int BUTTON_H = 20;
     private static final int SCROLL_STEP = 12;
 
-    // area lista (campi, così li usiamo nello scroll)
+    // area lista
     private final int listTop = 36;
     private int listBottom = 0;
-
-    // cache dei target filtrati (stessa dimensione)
-    private List<FlyMenuS2CPacket.FlyTargetEntry> filteredTargets = null;
 
     public FlyTargetListScreen(MutableText title, List<FlyMenuS2CPacket.FlyTargetEntry> targets) {
         super(title);
@@ -47,31 +40,14 @@ public class FlyTargetListScreen extends Screen {
     @Override
     protected void init() {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) {
-            return;
-        }
+        if (client.player == null) return;
 
         // Area scrollabile: dall'inizio lista fino sopra il bottone Close
         this.listBottom = this.height - 52;
         int viewportHeight = this.listBottom - this.listTop;
 
-        // Calcola una volta la lista filtrata (stessa dimensione)
-        if (filteredTargets == null) {
-            RegistryKey<World> currentWorld = client.world.getRegistryKey();
-            filteredTargets = new ArrayList<>();
-
-            for (FlyMenuS2CPacket.FlyTargetEntry entry : targets) {
-                RegistryKey<World> targetWorld =
-                        RegistryKey.of(RegistryKeys.WORLD, Identifier.of(entry.worldKey()));
-
-                if (targetWorld.equals(currentWorld)) {
-                    filteredTargets.add(entry);
-                }
-            }
-        }
-
         // Calcola max scroll in base a contenuto e viewport
-        int contentHeight = filteredTargets.size() * ROW_SPACING;
+        int contentHeight = targets.size() * ROW_SPACING;
         this.maxScroll = Math.max(0, contentHeight - viewportHeight);
         if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
         if (this.scrollOffset < 0) this.scrollOffset = 0;
@@ -79,7 +55,7 @@ public class FlyTargetListScreen extends Screen {
         // Disegna solo le righe visibili
         int y = FIRST_Y - scrollOffset;
 
-        for (FlyMenuS2CPacket.FlyTargetEntry entry : filteredTargets) {
+        for (FlyMenuS2CPacket.FlyTargetEntry entry : targets) {
             if (y + BUTTON_H < listTop) { // sopra la viewport
                 y += ROW_SPACING;
                 continue;
@@ -90,15 +66,19 @@ public class FlyTargetListScreen extends Screen {
 
             String name = entry.name();
             BlockPos pos = entry.pos();
+            String dimShort = shortDim(entry.worldKey());
 
             this.addDrawableChild(new SimpleButton(
                     this.width / 2 - 100,
                     y,
                     200,
                     BUTTON_H,
-                    Text.literal(name + " @ " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()),
+                    Text.literal(name + " [" + dimShort + "] @ " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()),
                     button -> {
-                        ClientPlayNetworking.send(new FlyPacketC2S(pos));
+                        Identifier worldId = Identifier.tryParse(entry.worldKey());
+                        if (worldId != null) {
+                            ClientPlayNetworking.send(new FlyPacketC2S(worldId, pos));
+                        }
                         MinecraftClient.getInstance().setScreen(null);
                     }
             ));
@@ -117,6 +97,12 @@ public class FlyTargetListScreen extends Screen {
         ));
     }
 
+    private static String shortDim(String worldKey) {
+        if (worldKey == null) return "?";
+        int idx = worldKey.indexOf(':');
+        return (idx >= 0 && idx + 1 < worldKey.length()) ? worldKey.substring(idx + 1) : worldKey;
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         // scroll solo dentro l'area lista
@@ -128,13 +114,11 @@ public class FlyTargetListScreen extends Screen {
             return true;
         }
 
-        // verticalAmount: >0 up, <0 down (se ti va invertito, cambia il segno)
         this.scrollOffset -= (int) (verticalAmount * SCROLL_STEP);
 
         if (this.scrollOffset < 0) this.scrollOffset = 0;
         if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
 
-        // ricrea i widget con la nuova posizione (senza toccare SimpleButton)
         MinecraftClient client = MinecraftClient.getInstance();
         this.clearChildren();
         this.init(client, this.width, this.height);
@@ -144,9 +128,7 @@ public class FlyTargetListScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // titolo (opzionale)
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 12, 0xFFFFFF);
-
         super.render(context, mouseX, mouseY, delta);
     }
 }
