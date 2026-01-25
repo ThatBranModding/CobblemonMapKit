@@ -5,17 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b39f538f-0004-4040-97e6-a9eeeda397bf" name="Changes" comment="ora la lista di fly target è scrollabile">
-      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Client.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Client.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Server.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Minecraft_Server.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/FlyTargetConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/config/FlyTargetConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/ModNetworking.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/FlyHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/handlers/FlyHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyMenuS2CPacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyMenuS2CPacket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyPacketC2S.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/networking/packet/fly/FlyPacketC2S.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/FlyTargetListScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cobblemon/khataly/mapkit/screen/custom/FlyTargetListScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
