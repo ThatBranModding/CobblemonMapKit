@@ -47,16 +47,24 @@ public class FlyTargetCommand {
                         })
                 )
 
-                // /flytarget create <name>
+                // /flytarget create <name...>
                 .then(CommandManager.literal("create")
-                        .then(CommandManager.argument("name", StringArgumentType.word())
+                        .then(CommandManager.argument("name", StringArgumentType.greedyString())
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
                                     ServerPlayerEntity player = source.getPlayer();
-                                    String name = StringArgumentType.getString(context, "name");
-                                    assert player != null;
-                                    BlockPos pos = player.getBlockPos();
+                                    if (player == null) {
+                                        source.sendMessage(Text.literal("§cThis command must be executed by a player."));
+                                        return 0;
+                                    }
 
+                                    String name = StringArgumentType.getString(context, "name").trim();
+                                    if (name.isEmpty()) {
+                                        source.sendMessage(Text.literal("§cName cannot be empty."));
+                                        return 0;
+                                    }
+
+                                    BlockPos pos = player.getBlockPos();
                                     boolean success = FlyTargetConfig.addTarget(name, player.getServerWorld().getRegistryKey(), pos);
 
                                     if (success) {
@@ -64,57 +72,64 @@ public class FlyTargetCommand {
                                                 pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
                                         return 1;
                                     } else {
-                                        source.sendMessage(Text.literal("§cFly target with name '" + name + "' already exists."));
+                                        source.sendMessage(Text.literal("§cFailed to create fly target '" + name + "'."));
                                         return 0;
                                     }
                                 })
                         )
                 )
 
-                // /flytarget remove <name>
+                // /flytarget remove <name...>
                 .then(CommandManager.literal("remove")
-                        .then(CommandManager.argument("name", StringArgumentType.word())
+                        .then(CommandManager.argument("name", StringArgumentType.greedyString())
                                 .suggests(FlyTargetCommand::suggestTargets)
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
-                                    String name = StringArgumentType.getString(context, "name");
+                                    String input = StringArgumentType.getString(context, "name").trim();
 
-                                    boolean removed = FlyTargetConfig.removeTarget(name);
+                                    String actualKey = resolveTargetKey(input);
+                                    if (actualKey == null) {
+                                        source.sendMessage(Text.literal("§cFly target '" + input + "' not found."));
+                                        return 0;
+                                    }
+
+                                    boolean removed = FlyTargetConfig.removeTarget(actualKey);
                                     if (removed) {
-                                        source.sendMessage(Text.literal("§aFly target '" + name + "' removed."));
+                                        source.sendMessage(Text.literal("§aFly target '" + actualKey + "' removed."));
                                         return 1;
                                     } else {
-                                        source.sendMessage(Text.literal("§cFly target '" + name + "' not found."));
+                                        source.sendMessage(Text.literal("§cFly target '" + actualKey + "' not found."));
                                         return 0;
                                     }
                                 })
                         )
                 )
 
-                // /flytarget unlock <player> <name>
+                // /flytarget unlock <player> <name...>
                 .then(CommandManager.literal("unlock")
                         .then(CommandManager.argument("player", EntityArgumentType.player())
-                                .then(CommandManager.argument("name", StringArgumentType.word())
+                                .then(CommandManager.argument("name", StringArgumentType.greedyString())
                                         .suggests(FlyTargetCommand::suggestTargets)
                                         .executes(context -> {
                                             ServerCommandSource source = context.getSource();
                                             ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
-                                            String name = StringArgumentType.getString(context, "name");
-                                            String keyLower = name.toLowerCase(Locale.ROOT);
+                                            String input = StringArgumentType.getString(context, "name").trim();
 
-                                            Map<String, FlyTargetConfig.TargetInfo> all = FlyTargetConfig.getAllTargets();
-                                            if (!all.containsKey(keyLower)) {
-                                                source.sendMessage(Text.literal("§cFly target '" + name + "' does not exist."));
+                                            String actualKey = resolveTargetKey(input);
+                                            if (actualKey == null) {
+                                                source.sendMessage(Text.literal("§cFly target '" + input + "' does not exist."));
                                                 return 0;
                                             }
 
+                                            String keyLower = actualKey.toLowerCase(Locale.ROOT);
                                             boolean added = PlayerFlyProgress.unlock(targetPlayer.getUuid(), keyLower);
+
                                             if (added) {
-                                                source.sendMessage(Text.literal("§aUnlocked fly target '§e" + name + "§a' for §b" + targetPlayer.getName().getString() + "§a."));
-                                                targetPlayer.sendMessage(Text.literal("§7[Admin] §fNow you can fly to " + pretty(name)), false);
+                                                source.sendMessage(Text.literal("§aUnlocked fly target '§e" + actualKey + "§a' for §b" + targetPlayer.getName().getString() + "§a."));
+                                                targetPlayer.sendMessage(Text.literal("§7[Admin] §fNow you can fly to " + pretty(actualKey)), false);
                                                 return 1;
                                             } else {
-                                                source.sendMessage(Text.literal("§ePlayer already had fly target '§e" + name + "§e' unlocked."));
+                                                source.sendMessage(Text.literal("§ePlayer already had fly target '§e" + actualKey + "§e' unlocked."));
                                                 return 1;
                                             }
                                         })
@@ -147,10 +162,25 @@ public class FlyTargetCommand {
                         })
                 )
 
-                // /flytarget tp <name> [player]
+                // /flytarget tp <name...>
+                // /flytarget tp <player> <name...>
+                //
+                // NOTE: player-first branch exists because greedyString cannot have args after it.
                 .then(CommandManager.literal("tp")
-                        // /flytarget tp <name> (teleporta chi esegue il comando)
-                        .then(CommandManager.argument("name", StringArgumentType.word())
+                        // tp <player> <name...>
+                        .then(CommandManager.argument("player", EntityArgumentType.player())
+                                .then(CommandManager.argument("name", StringArgumentType.greedyString())
+                                        .suggests(FlyTargetCommand::suggestTargets)
+                                        .executes(context -> {
+                                            ServerCommandSource source = context.getSource();
+                                            ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
+                                            String input = StringArgumentType.getString(context, "name").trim();
+                                            return teleportToTarget(source, targetPlayer, input);
+                                        })
+                                )
+                        )
+                        // tp <name...> (self)
+                        .then(CommandManager.argument("name", StringArgumentType.greedyString())
                                 .suggests(FlyTargetCommand::suggestTargets)
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
@@ -159,30 +189,38 @@ public class FlyTargetCommand {
                                         source.sendMessage(Text.literal("§cThis command must be executed by a player."));
                                         return 0;
                                     }
-                                    String name = StringArgumentType.getString(context, "name");
-                                    return teleportToTarget(source, player, name);
+                                    String input = StringArgumentType.getString(context, "name").trim();
+                                    return teleportToTarget(source, player, input);
                                 })
-                                // /flytarget tp <name> <player> (teleporta un altro giocatore)
-                                .then(CommandManager.argument("player", EntityArgumentType.player())
-                                        .executes(context -> {
-                                            ServerCommandSource source = context.getSource();
-                                            ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
-                                            String name = StringArgumentType.getString(context, "name");
-                                            return teleportToTarget(source, targetPlayer, name);
-                                        })
-                                )
                         )
                 )
         );
     }
 
-    // ======== Suggerimenti & util ========
+    // ======== Suggestions & utils ========
 
     private static CompletableFuture<Suggestions> suggestTargets(
             CommandContext<ServerCommandSource> context,
             SuggestionsBuilder builder
     ) {
         return CommandSource.suggestMatching(FlyTargetConfig.getAllTargets().keySet(), builder);
+    }
+
+    /**
+     * Resolve a target name case-insensitively.
+     * Returns the actual stored key (original casing) or null if not found.
+     */
+    private static String resolveTargetKey(String input) {
+        if (input == null) return null;
+        String needle = input.trim().toLowerCase(Locale.ROOT);
+        if (needle.isEmpty()) return null;
+
+        for (String key : FlyTargetConfig.getAllTargets().keySet()) {
+            if (key.equalsIgnoreCase(needle) || key.toLowerCase(Locale.ROOT).equals(needle)) {
+                return key;
+            }
+        }
+        return null;
     }
 
     private static String pretty(String name) {
@@ -197,20 +235,24 @@ public class FlyTargetCommand {
         return sb.toString().trim();
     }
 
-    private static int teleportToTarget(ServerCommandSource source, ServerPlayerEntity player, String name) {
-        String keyLower = name.toLowerCase(Locale.ROOT);
-        Map<String, FlyTargetConfig.TargetInfo> all = FlyTargetConfig.getAllTargets();
+    private static int teleportToTarget(ServerCommandSource source, ServerPlayerEntity player, String inputName) {
+        String actualKey = resolveTargetKey(inputName);
+        if (actualKey == null) {
+            source.sendMessage(Text.literal("§cFly target '" + inputName + "' doesn't exist."));
+            return 0;
+        }
 
-        FlyTargetConfig.TargetInfo info = all.get(keyLower);
+        Map<String, FlyTargetConfig.TargetInfo> all = FlyTargetConfig.getAllTargets();
+        FlyTargetConfig.TargetInfo info = all.get(actualKey);
         if (info == null) {
-            source.sendMessage(Text.literal("§cFly target '" + name + "' doesn't exist."));
+            source.sendMessage(Text.literal("§cFly target '" + actualKey + "' doesn't exist."));
             return 0;
         }
 
         var server = source.getServer();
         var world = server.getWorld(info.worldKey);
         if (world == null) {
-            source.sendMessage(Text.literal("§Dimension for the target '" + name + "' non available."));
+            source.sendMessage(Text.literal("§cDimension for the target '" + actualKey + "' not available."));
             return 0;
         }
 
@@ -226,9 +268,9 @@ public class FlyTargetCommand {
 
         if (source.getEntity() != player) {
             source.sendMessage(Text.literal("§aYou teleported §b" + player.getName().getString() +
-                    " §ato the target §e" + pretty(name) + "§a."));
+                    " §ato the target §e" + pretty(actualKey) + "§a."));
         }
-        player.sendMessage(Text.literal("§7[FlyTarget] §fTeleported to §e" + pretty(name) + "§f..."), false);
+        player.sendMessage(Text.literal("§7[FlyTarget] §fTeleported to §e" + pretty(actualKey) + "§f..."), false);
         return 1;
     }
 }
