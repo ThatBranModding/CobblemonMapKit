@@ -13,6 +13,11 @@ public class ModItems {
     public static final Item GRASS_WAND = registerItem("grass_wand",
             new GrassWandItem(new Item.Settings().maxCount(1)));
 
+    public static final Item WEATHER_WAND = registerItem("weather_wand",
+            new WeatherWandItem(new Item.Settings().maxCount(1)));
+
+
+
     // === MEDAGLIE ===
     public static final Item FIRE_BADGE = registerItem("fire_badge", new BadgeItem(new Item.Settings().maxCount(1)));
     public static final Item WATER_BADGE = registerItem("water_badge", new BadgeItem(new Item.Settings().maxCount(1)));

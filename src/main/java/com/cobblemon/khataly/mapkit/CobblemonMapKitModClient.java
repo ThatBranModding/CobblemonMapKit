@@ -33,6 +33,11 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 
+import com.cobblemon.khataly.mapkit.event.client.custom.LocalWeatherClientTicker;
+import com.cobblemon.khataly.mapkit.event.client.custom.LocalWeatherWandClient;
+import com.cobblemon.khataly.mapkit.networking.util.LocalWeatherNetworkingInit;
+
+
 public class CobblemonMapKitModClient implements ClientModInitializer {
 
     private boolean wasUsePressed   = false;
@@ -45,6 +50,9 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         registerClientReceivers();
         registerClientEvents();
         registerBicycleInputHandlers();
+        LocalWeatherWandClient.register();
+        LocalWeatherClientTicker.register();
+
     }
 
     private void registerScreensAndBlocks() {
@@ -73,6 +81,10 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         CurioCaseClientHandler.register();
 
         GrassNetworkingInit.registerReceivers();
+
+        LocalWeatherNetworkingInit.registerReceivers();
+
+
 
         ClientPlayNetworking.registerGlobalReceiver(RotatePlayerS2CPacket.ID, (payload, ctx) -> {
             float total = payload.totalRotation();

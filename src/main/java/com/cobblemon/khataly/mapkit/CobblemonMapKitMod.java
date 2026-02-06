@@ -1,5 +1,7 @@
 package com.cobblemon.khataly.mapkit;
 
+import com.cobblemon.khataly.mapkit.config.LocalWeatherZonesConfig;
+import com.cobblemon.khataly.mapkit.event.server.custom.LocalWeatherTicker;
 import com.cobblemon.khataly.mapkit.block.ModBlocks;
 import com.cobblemon.khataly.mapkit.block.entity.ModBlockEntities;
 import com.cobblemon.khataly.mapkit.command.ModCommands;
@@ -35,6 +37,11 @@ public class CobblemonMapKitMod implements ModInitializer {
         GrassZonesConfig.load();
         FlyTargetConfig.load();
         LevelCapConfig.load();
+
+        LocalWeatherZonesConfig.load();
+        LocalWeatherTicker.register();
+
+
 
         ModSounds.registerSounds();
         ModScreenHandlers.registerScreenHandlers();

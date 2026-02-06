@@ -34,6 +34,13 @@ import com.cobblemon.khataly.mapkit.networking.packet.teleport.TeleportPacketC2S
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHoleMenuC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHoleMenuS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.ultrahole.UltraHolePacketC2S;
+import com.cobblemon.khataly.mapkit.networking.packet.localweather.PlaceLocalWeatherC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.handlers.WeatherWandHandler;
+
+import com.cobblemon.khataly.mapkit.networking.handlers.LocalWeatherWandHandler;
+import com.cobblemon.khataly.mapkit.networking.packet.localweather.LocalWeatherZonesSyncS2CPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.localweather.PlaceLocalWeatherC2SPacket;
+import com.cobblemon.khataly.mapkit.networking.packet.localweather.RequestLocalWeatherZonesC2SPacket;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -49,6 +56,23 @@ public class ModNetworking {
         PayloadTypeRegistry.playC2S().register(CutPacketC2S.ID,          CutPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(StrengthPacketC2S.ID,     StrengthPacketC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(RockClimbPacketC2S.ID,    RockClimbPacketC2S.CODEC);
+
+// ======= LocalWeather Zones =======
+        PayloadTypeRegistry.playS2C().register(LocalWeatherZonesSyncS2CPacket.ID, LocalWeatherZonesSyncS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RequestLocalWeatherZonesC2SPacket.ID, RequestLocalWeatherZonesC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(PlaceLocalWeatherC2SPacket.ID, PlaceLocalWeatherC2SPacket.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(
+                RequestLocalWeatherZonesC2SPacket.ID,
+                (payload, ctx) -> ctx.server().execute(() ->
+                        ServerPlayNetworking.send(ctx.player(), LocalWeatherZonesSyncS2CPacket.fromConfig())
+                )
+        );
+
+// handler (server create zones)
+        LocalWeatherWandHandler.register();
+
+
 
         // Fly execute (NOTE: this is now worldKeyId + pos in the packet)
         PayloadTypeRegistry.playC2S().register(FlyPacketC2S.ID,          FlyPacketC2S.CODEC);
