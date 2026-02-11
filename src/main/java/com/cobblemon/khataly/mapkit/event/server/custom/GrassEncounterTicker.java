@@ -1,11 +1,15 @@
 package com.cobblemon.khataly.mapkit.event.server.custom;
 
+import com.cobblemon.khataly.mapkit.CobblemonMapKitMod;
+import com.cobblemon.khataly.mapkit.compat.MaxRepelCompat;
+import com.cobblemon.khataly.mapkit.compat.ShinyDexCompat;
 import com.cobblemon.khataly.mapkit.config.GrassZonesConfig;
 import com.cobblemon.khataly.mapkit.util.PlayerUtils;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.battles.BattleFledEvent;
+import com.cobblemon.mod.common.api.events.pokemon.ShinyChanceCalculationEvent;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.battles.BattleBuilder;
 import com.cobblemon.mod.common.battles.BattleFormat;
@@ -24,37 +28,30 @@ import net.minecraft.util.math.random.Random;
 import java.util.*;
 
 /**
- * Incontri “a passo” nelle Grass Zones (supporto minY..maxY):
- * - Cooldown per player, trigger su cambio blocco;
- * - Filtro DAY/NIGHT/BOTH;
- * - Shiny odds per zona (1/N; -1 = default globale);
- * - Aspect opzionale per variante regionale (es. "alola");
- * - Medium per spawn (LAND/WATER/BOTH) -> decide se spawnare mentre sei in acqua o su terra;
- * - Non spawna se il player è già in battaglia;
- * - Se il player fugge dalla lotta, il selvatico viene despawnato.
+ * Grass Zone step encounters + MaxRepel + supported shiny pipeline.
+ *
+ * Shiny:
+ * - Use Cobblemon base odds + SHINY_CHANCE_CALCULATION (so boosters/mods that hook it apply)
+ * - Apply Zone ShinyMultiplier AFTER that
+ * - ALSO: ShinyDex compat (because ShinyDex uses SpawnEvent path which GrassZones bypass)
  */
 public class GrassEncounterTicker {
 
-    // ~3s a 20 TPS
     private static final int ENCOUNTER_COOLDOWN_TICKS = 60;
-    // 8% per step
     private static final double BASE_STEP_CHANCE = 0.08;
-    // Default globale shiny 1/N (se zona mette -1 o non specifica)
-    private static final int DEFAULT_GLOBAL_SHINY_ODDS = 4096;
 
     private static final Map<UUID, Integer> COOLDOWN = new HashMap<>();
     private static final Map<UUID, BlockPos> LAST_BLOCK = new HashMap<>();
-    /** PlayerUUID -> WildEntityUUID (solo per incontri generati da questo ticker). */
     private static final Map<UUID, UUID> ACTIVE_WILD = new HashMap<>();
 
     private static volatile boolean EVENTS_HOOKED = false;
+    private static volatile boolean LOGGED_ONCE = false;
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(GrassEncounterTicker::onServerTick);
         hookBattleFleeDespawnOnce();
     }
 
-    /** Despawn del selvatico quando il player fugge dalla battaglia. */
     private static void hookBattleFleeDespawnOnce() {
         if (EVENTS_HOOKED) return;
         EVENTS_HOOKED = true;
@@ -64,7 +61,6 @@ public class GrassEncounterTicker {
                 (BattleFledEvent event) -> {
                     try {
                         PlayerBattleActor actor = event.getPlayer();
-
                         ServerPlayerEntity player = actor.getEntity();
                         if (player == null) return kotlin.Unit.INSTANCE;
 
@@ -84,84 +80,73 @@ public class GrassEncounterTicker {
     }
 
     private static void onServerTick(MinecraftServer server) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            // scala il cooldown
-            COOLDOWN.computeIfPresent(player.getUuid(), (id, cd) -> Math.max(0, cd - 1));
+        if (!LOGGED_ONCE) {
+            LOGGED_ONCE = true;
+            CobblemonMapKitMod.LOGGER.info("[GrassEncounterTicker] Shiny: Cobblemon base -> SHINY_CHANCE_CALCULATION -> apply Zone ShinyMultiplier -> ShinyDex compat (if installed).");
+        }
 
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+
+            COOLDOWN.computeIfPresent(player.getUuid(), (id, cd) -> Math.max(0, cd - 1));
             if (!isValidStepState(player)) continue;
 
-            // controllo movimento a nuovo blocco
             BlockPos now = player.getBlockPos();
             BlockPos prev = LAST_BLOCK.put(player.getUuid(), now);
             if (prev != null && prev.equals(now)) continue;
 
-            // in cooldown?
             if (COOLDOWN.getOrDefault(player.getUuid(), 0) > 0) continue;
 
             var world = player.getWorld();
             var wk = world.getRegistryKey();
 
-            // zone alla posizione esatta (X/Z nel box e Y nel range minY..maxY)
             var zones = GrassZonesConfig.findAt(wk, now.getX(), now.getY(), now.getZ());
             if (zones.isEmpty()) continue;
 
-            // scegliamo la prima zona valida; si può randomizzare se serve
             GrassZonesConfig.Zone zone = zones.getFirst();
-
-            // già in battaglia? niente encounter
             if (isInBattle(player)) continue;
 
-            // roll chance base per step
             Random rng = player.getRandom();
             if (rng.nextDouble() >= BASE_STEP_CHANCE) continue;
 
-            // filtra spawns per fascia oraria
             List<GrassZonesConfig.SpawnEntry> timeFiltered = filterByTime(zone.spawns(), world);
             if (timeFiltered.isEmpty()) continue;
 
-            // NEW: filtra per medium (LAND/WATER/BOTH) usando enum, non stringhe
             boolean inWater = isPlayerInWaterForEncounters(player);
             List<GrassZonesConfig.SpawnEntry> pool = filterByMedium(timeFiltered, inWater);
             if (pool.isEmpty()) continue;
 
-            // scelta pesata
             GrassZonesConfig.SpawnEntry choice = weightedRandom(pool, rng);
             if (choice == null) continue;
 
             int levelRange = Math.max(1, choice.maxLevel - choice.minLevel + 1);
             int level = choice.minLevel + rng.nextInt(levelRange);
 
-            // shiny roll per zona
-            int shinyOdds = getZoneShinyOddsOrDefault(zone);
-            boolean isShiny = rollShiny(rng, shinyOdds);
+            // MaxRepel: if active, only allow if spawnLevel > lead level
+            if (MaxRepelCompat.isAnyRepelActive(player)) {
+                int leadLevel = MaxRepelCompat.getLeadPartyLevel(player);
+                if (leadLevel >= 0 && level <= leadLevel) continue;
+            }
 
             BattleFormat format = BattleFormat.Companion.getGEN_9_SINGLES();
 
-            if (startWildBattle(player, choice.species, level, format, isShiny, choice.aspect)) {
+            if (startWildBattle(player, choice.species, level, format, zone.shinyMultiplier(), choice.aspect, rng)) {
                 COOLDOWN.put(player.getUuid(), ENCOUNTER_COOLDOWN_TICKS);
             }
         }
     }
 
-    /** Condizioni minime per il passo valido. */
     private static boolean isValidStepState(ServerPlayerEntity p) {
         if (p.isSpectator()) return false;
         if (p.hasVehicle()) return false;
 
-        // IMPORTANT:
-        // Prima avevi: !p.isOnGround() => niente acqua.
-        // Ora accettiamo sia "onGround" che "in acqua" (nuoto/cammino in acqua).
         boolean onLand = p.isOnGround();
         boolean inWater = isPlayerInWaterForEncounters(p);
-
         if (!onLand && !inWater) return false;
 
-        // evita incontri durante/alla soglia di una battaglia
         return !isInBattle(p);
     }
 
     private static boolean isPlayerInWaterForEncounters(ServerPlayerEntity p) {
-        // isSwimming() = animazione nuoto; isSubmergedInWater() = testa sott'acqua; isTouchingWater() = piedi/box in contatto
         return p.isTouchingWater() || p.isSwimming() || p.isSubmergedInWater();
     }
 
@@ -174,11 +159,8 @@ public class GrassEncounterTicker {
         }
     }
 
-    /** Applica il filtro DAY/NIGHT/BOTH rispetto al ciclo vanilla. */
     private static List<GrassZonesConfig.SpawnEntry> filterByTime(List<GrassZonesConfig.SpawnEntry> entries, net.minecraft.world.World world) {
         if (entries == null || entries.isEmpty()) return Collections.emptyList();
-
-        // Dimensioni senza skylight => non filtriamo
         if (!world.getDimension().hasSkyLight()) return entries;
 
         long dayTime = world.getTimeOfDay() % 24000L;
@@ -196,7 +178,6 @@ public class GrassEncounterTicker {
         return out;
     }
 
-    /** NEW: filtra gli spawn per medium in base a se il player è in acqua. */
     private static List<GrassZonesConfig.SpawnEntry> filterByMedium(List<GrassZonesConfig.SpawnEntry> entries, boolean inWater) {
         if (entries == null || entries.isEmpty()) return Collections.emptyList();
 
@@ -208,18 +189,13 @@ public class GrassEncounterTicker {
                     ? GrassZonesConfig.MediumBand.BOTH
                     : e.medium;
 
-            if (m == GrassZonesConfig.MediumBand.BOTH) {
-                out.add(e);
-            } else if (m == GrassZonesConfig.MediumBand.WATER) {
-                if (inWater) out.add(e);
-            } else { // LAND
-                if (!inWater) out.add(e);
-            }
+            if (m == GrassZonesConfig.MediumBand.BOTH) out.add(e);
+            else if (m == GrassZonesConfig.MediumBand.WATER) { if (inWater) out.add(e); }
+            else { if (!inWater) out.add(e); } // LAND
         }
         return out;
     }
 
-    /** Estrazione pesata classica. */
     private static GrassZonesConfig.SpawnEntry weightedRandom(List<GrassZonesConfig.SpawnEntry> entries, Random r) {
         if (entries == null || entries.isEmpty()) return null;
         int total = 0;
@@ -235,25 +211,16 @@ public class GrassEncounterTicker {
         return null;
     }
 
-    private static int getZoneShinyOddsOrDefault(GrassZonesConfig.Zone zone) {
-        return (zone.shinyOdds() <= 0) ? DEFAULT_GLOBAL_SHINY_ODDS : zone.shinyOdds();
-    }
-
-    private static boolean rollShiny(Random rng, int odds) {
-        if (odds <= 1) return true;
-        return rng.nextInt(odds) == 0;
-    }
-
     private static boolean startWildBattle(ServerPlayerEntity player,
                                            String speciesId,
                                            int level,
                                            BattleFormat format,
-                                           boolean shiny,
-                                           String aspect) {
+                                           double shinyMultiplier,
+                                           String aspect,
+                                           Random rng) {
         var server = player.getServer();
         if (server == null) return false;
         if (!PlayerUtils.hasUsablePokemon(player)) return false;
-
         if (isInBattle(player)) return false;
 
         String key = speciesId == null ? "" : speciesId.toLowerCase(Locale.ROOT);
@@ -271,13 +238,15 @@ public class GrassEncounterTicker {
         }
 
         pokemon.setLevel(level);
-        pokemon.setShiny(shiny);
+
+        boolean isShiny = rollShiny(player, pokemon, shinyMultiplier, rng);
+        pokemon.setShiny(isShiny);
+
         pokemon.initializeMoveset(true);
         pokemon.heal();
 
         var sw = (ServerWorld) player.getWorld();
 
-        // spawn vicino al player
         final double targetY = player.getY();
         Vec3d spawnPos = null;
         Vec3d base = player.getPos();
@@ -294,7 +263,6 @@ public class GrassEncounterTicker {
         for (Vec3d cand : candidates) {
             BlockPos bp = BlockPos.ofFloored(cand.x, cand.y, cand.z);
 
-            // in acqua: permetti spawn anche se il blocco è acqua (non solo aria)
             boolean spaceOk = sw.isAir(bp) || !sw.getFluidState(bp).isEmpty();
             boolean aboveOk = sw.isAir(bp.up()) || !sw.getFluidState(bp.up()).isEmpty();
 
@@ -331,5 +299,48 @@ public class GrassEncounterTicker {
         }));
 
         return true;
+    }
+
+    /**
+     * Shiny roll:
+     * 1) Base odds from Cobblemon config
+     * 2) Run SHINY_CHANCE_CALCULATION so mods that hook it apply
+     * 3) Apply Zone multiplier: odds /= multiplier
+     * 4) Roll probability = 1/odds
+     * 5) If ShinyDex is installed + charm says yes => force shiny (because ShinyDex normally relies on SpawnEvent)
+     */
+    private static boolean rollShiny(ServerPlayerEntity player, Pokemon pokemon, double zoneMultiplier, Random rng) {
+        float baseOdds;
+        try {
+            baseOdds = Cobblemon.INSTANCE.getConfig().getShinyRate(); // "1 in N"
+        } catch (Throwable t) {
+            baseOdds = 8192f;
+        }
+
+        float effectiveOdds = baseOdds;
+
+        try {
+            ShinyChanceCalculationEvent ev = new ShinyChanceCalculationEvent(baseOdds, pokemon);
+            CobblemonEvents.SHINY_CHANCE_CALCULATION.post(ev);
+            effectiveOdds = ev.calculate(player);
+        } catch (Throwable ignored) {
+            effectiveOdds = baseOdds;
+        }
+
+        double mult = zoneMultiplier;
+        if (Double.isNaN(mult) || Double.isInfinite(mult) || mult <= 0) mult = 1.0;
+
+        double finalOdds = ((double) effectiveOdds) / mult;
+        if (finalOdds < 1.0) finalOdds = 1.0;
+
+        float chance = (float) (1.0 / finalOdds);
+        boolean shiny = rng.nextFloat() < chance;
+
+        // ShinyDex compat: if player has charm and it procs, force shiny
+        if (!shiny && ShinyDexCompat.shouldForceShiny(player)) {
+            return true;
+        }
+
+        return shiny;
     }
 }

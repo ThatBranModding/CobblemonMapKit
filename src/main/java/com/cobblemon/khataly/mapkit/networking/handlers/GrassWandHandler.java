@@ -44,13 +44,11 @@ public class GrassWandHandler {
         int minZ = Math.min(a.getZ(), b.getZ());
         int maxZ = Math.max(a.getZ(), b.getZ());
 
-        // NUOVO: range verticale completo
+        // Range verticale completo
         int minY = Math.min(a.getY(), b.getY());
         int maxY = Math.max(a.getY(), b.getY());
 
-        // Removed MAX_SIZE restriction: allow any selection size.
-
-        // NUOVO: prevenzione overlap 3D (usa il range Y completo)
+        // prevenzione overlap 3D
         if (GrassZonesConfig.overlaps(world.getRegistryKey(), minX, minZ, maxX, maxZ, minY, maxY)) {
             player.sendMessage(Text.literal("Cannot create the grass zone: it overlaps an existing one."), false);
             return;
@@ -62,7 +60,7 @@ public class GrassWandHandler {
         Block shortGrassBlock = resolveShortGrass();
         long placed = 0L;
 
-        // NUOVO: posizionamento erba su tutto il volume selezionato (scansione per-Y)
+        // posizionamento erba su tutto il volume selezionato
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
@@ -100,16 +98,19 @@ public class GrassWandHandler {
                 new GrassZonesConfig.SpawnEntry("cobblemon:geodude", 10, 14, 30, GrassZonesConfig.TimeBand.BOTH, "alolan")
         );
 
-        // New: human-friendly incremental name (Zone1, Zone2, ...)
+        // human-friendly incremental name (Zone1, Zone2, ...)
         String zoneName = nextAvailableZoneName();
 
-        // NUOVO: creazione zona con range verticale minY..maxY
+        // IMPORTANT:
+        // New schema expects "ShinyMultiplier": 1.0 (number, no quotes required in JSON)
+        // So we create zones with multiplier default = 1.0
         UUID id = GrassZonesConfig.addZone(
                 zoneName,
                 world.getRegistryKey(),
                 minX, minZ, maxX, maxZ,
                 minY, maxY,
-                defaultSpawns
+                defaultSpawns,
+                1.0 // ShinyMultiplier default (1x)
         );
 
         player.sendMessage(Text.literal("Grass zone created: " + zoneName + " (" + id + "). Blocks placed: " + placed), false);

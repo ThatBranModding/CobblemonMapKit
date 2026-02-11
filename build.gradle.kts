@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.cobblemon.khataly.mapkit"
-version = "1.0.11-FABRIFROGE"
+version = "1.0.12-FABRIFROGE"
 
 architectury {
     platformSetupLoomIde()

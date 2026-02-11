@@ -2,6 +2,7 @@ package com.cobblemon.khataly.mapkit.config;
 
 import com.cobblemon.khataly.mapkit.CobblemonMapKitMod;
 import com.google.gson.*;
+import com.google.gson.annotations.SerializedName;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
@@ -15,20 +16,30 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Gestione Grass Zones (3D: X/Z + range verticale Y):
+ * Grass Zones (3D: X/Z + range verticale Y):
  *  - Una zona per file: config/cobblemonmapkit/zones/<nome>.json
- *  - Nome obbligatorio e persistenza del nome nel filename
- *  - Migrazione da formati legacy (grass_zones.json e/o singolo campo y)
  *
- * Schema v5:
- *  - Adds per-spawn "medium": "land" | "water" | "both" (default both)
+ * Schema v6:
+ *  - Per-zone ShinyMultiplier (double), serialized exactly as "ShinyMultiplier"
+ *    - 1.0 = normal
+ *    - 2.0 = double shiny chance (halve odds)
+ *    - 0.5 = half shiny chance (double odds)
+ *  - Keeps legacy read support for shinyOdds (1/N). If present and ShinyMultiplier missing,
+ *    it converts assuming Cobblemon default base odds 8192: multiplier = 8192 / shinyOdds.
+ *
+ * Schema v5 legacy:
+ *  - per-spawn "medium": "land" | "water" | "both"
  */
 public class GrassZonesConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File ZONES_DIR = new File("config/cobblemonmapkit/zones");
-    /** Bump per minY/maxY + medium support; retrocompat con campo singolo "y" e spawn senza medium. */
-    private static final int CURRENT_SCHEMA_VERSION = 5;
+
+    /** Bump for ShinyMultiplier + legacy shinyOdds migration. */
+    private static final int CURRENT_SCHEMA_VERSION = 6;
+
+    /** Used ONLY to convert legacy shinyOdds -> multiplier. */
+    private static final double LEGACY_BASE_ODDS_FOR_CONVERSION = 8192.0;
 
     public enum TimeBand { DAY, NIGHT, BOTH }
     public enum MediumBand { LAND, WATER, BOTH }
@@ -42,8 +53,7 @@ public class GrassZonesConfig {
         public final TimeBand time;
         /** Variante opzionale (es. "alola", "hisui", "galar", ...). */
         public final String aspect;
-
-        /** NEW: medium restriction for encounters. Defaults to BOTH. */
+        /** Medium restriction (default BOTH). */
         public final MediumBand medium;
 
         public SpawnEntry(String species, int minLevel, int maxLevel, int weight, TimeBand time, String aspect, MediumBand medium) {
@@ -77,8 +87,9 @@ public class GrassZonesConfig {
         private final int minY, maxY;
         private final long timeCreated;
         private final List<SpawnEntry> spawns;
-        /** Shiny odds specifiche della zona (1 su N). -1 = usa default globale. */
-        private final int shinyOdds;
+
+        /** Shiny multiplier for this zone (1.0 = normal). */
+        private final double shinyMultiplier;
 
         public Zone(UUID id,
                     String name,
@@ -87,7 +98,7 @@ public class GrassZonesConfig {
                     int minY, int maxY,
                     long timeCreated,
                     List<SpawnEntry> spawns,
-                    int shinyOdds) {
+                    double shinyMultiplier) {
             this.id = id;
             this.name = (name == null || name.isBlank()) ? ("Zone " + shortId(id)) : name.trim();
             this.worldKey = worldKey;
@@ -99,7 +110,10 @@ public class GrassZonesConfig {
             this.maxY = Math.max(minY, maxY);
             this.timeCreated = timeCreated;
             this.spawns = List.copyOf(spawns == null ? List.of() : spawns);
-            this.shinyOdds = (shinyOdds <= 0) ? -1 : shinyOdds;
+
+            double m = shinyMultiplier;
+            if (Double.isNaN(m) || Double.isInfinite(m) || m <= 0) m = 1.0;
+            this.shinyMultiplier = m;
         }
 
         public boolean contains(int x, int y, int z, RegistryKey<World> w) {
@@ -121,16 +135,16 @@ public class GrassZonesConfig {
         public int maxY() { return maxY; }
         public long timeCreated() { return timeCreated; }
         public List<SpawnEntry> spawns() { return spawns; }
-        public int shinyOdds() { return shinyOdds; }
+        public double shinyMultiplier() { return shinyMultiplier; }
 
         public Zone withName(String newName) {
-            return new Zone(id, newName, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, spawns, shinyOdds);
+            return new Zone(id, newName, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, spawns, shinyMultiplier);
         }
-        public Zone withShinyOdds(int newShinyOdds) {
-            return new Zone(id, name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, spawns, newShinyOdds);
+        public Zone withShinyMultiplier(double newMult) {
+            return new Zone(id, name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, spawns, newMult);
         }
         public Zone withSpawns(List<SpawnEntry> newSpawns) {
-            return new Zone(id, name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, newSpawns, shinyOdds);
+            return new Zone(id, name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, timeCreated, newSpawns, shinyMultiplier);
         }
     }
 
@@ -149,30 +163,32 @@ public class GrassZonesConfig {
         String worldKey;
         int minX, minZ, maxX, maxZ;
 
-        /** range verticale; legacy: solo y. */
         Integer minY;
         Integer maxY;
 
-        /** LEGACY: singolo Y; se presente viene migrato a minY==maxY==y. */
+        /** LEGACY: singolo Y. */
         Integer y;
 
         long timeCreated;
         List<SpawnData> spawns;
-        Integer shinyOdds; // 1 su N; <=0 o null -> default globale
+
+        /** LEGACY v5: 1/N odds. */
+        Integer shinyOdds;
+
+        /** v6: write exactly "ShinyMultiplier" */
+        @SerializedName(value = "ShinyMultiplier", alternate = {"shinyMultiplier", "shiny_multiplier"})
+        Double shinyMultiplier;
     }
     private static class SpawnData {
         String species;
         int minLevel, maxLevel, weight;
         String time;    // "day" | "night" | "both"
         String aspect;  // opzionale
-
-        // NEW: medium restriction
-        String medium;  // "land" | "water" | "both"  (default "both")
+        String medium;  // "land" | "water" | "both"
     }
 
     // ======== IN-MEMORY STATE ========
     private static final Map<UUID, Zone> ZONES = new LinkedHashMap<>();
-    /** Traccia il file attuale per ogni zona (per rinominare senza cercare). */
     private static final Map<UUID, File> FILE_BY_ID = new HashMap<>();
 
     // ======== API ========
@@ -181,7 +197,6 @@ public class GrassZonesConfig {
         ZONES.clear();
         FILE_BY_ID.clear();
 
-        // Migrazione dal file legacy se presente
         File legacy = new File("config/cobblemonmapkit/grass_zones.json");
         if (legacy.exists()) {
             migrateLegacy(legacy);
@@ -193,6 +208,7 @@ public class GrassZonesConfig {
             CobblemonMapKitMod.LOGGER.info("[GrassZonesConfig] No zones found.");
             return;
         }
+
         int ok = 0, bad = 0;
         for (File f : files) {
             try {
@@ -260,7 +276,6 @@ public class GrassZonesConfig {
         return false;
     }
 
-    /** Serializza tutte le zone (sincronizza/ripulisce orfani). */
     public static void save() {
         try {
             ensureDir();
@@ -284,41 +299,30 @@ public class GrassZonesConfig {
         }
     }
 
-    /** Creazione zona (compat: singolo Y -> minY==maxY==y). */
+    // ----- addZone overloads -----
+
     public static UUID addZone(String name,
                                RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
                                int y,
                                List<SpawnEntry> spawns) {
-        return addZone(name, worldKey, minX, minZ, maxX, maxZ, y, y, spawns, -1);
+        return addZone(name, worldKey, minX, minZ, maxX, maxZ, y, y, spawns, 1.0);
     }
 
-    /** Creazione zona con shiny odds esplicite (compat: singolo Y). */
-    public static UUID addZone(String name,
-                               RegistryKey<World> worldKey,
-                               int minX, int minZ, int maxX, int maxZ,
-                               int y,
-                               List<SpawnEntry> spawns,
-                               int shinyOdds) {
-        return addZone(name, worldKey, minX, minZ, maxX, maxZ, y, y, spawns, shinyOdds);
-    }
-
-    /** creazione zona con range verticale completo. */
     public static UUID addZone(String name,
                                RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
                                int minY, int maxY,
                                List<SpawnEntry> spawns) {
-        return addZone(name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, spawns, -1);
+        return addZone(name, worldKey, minX, minZ, maxX, maxZ, minY, maxY, spawns, 1.0);
     }
 
-    /** creazione zona con range verticale e shiny odds. */
     public static UUID addZone(String name,
                                RegistryKey<World> worldKey,
                                int minX, int minZ, int maxX, int maxZ,
                                int minY, int maxY,
                                List<SpawnEntry> spawns,
-                               int shinyOdds) {
+                               double shinyMultiplier) {
         UUID id = UUID.randomUUID();
         Zone z = new Zone(
                 id, name, worldKey,
@@ -326,7 +330,7 @@ public class GrassZonesConfig {
                 minY, maxY,
                 Instant.now().toEpochMilli(),
                 spawns == null ? List.of() : spawns,
-                shinyOdds
+                shinyMultiplier
         );
         ZONES.put(id, z);
         try {
@@ -351,14 +355,12 @@ public class GrassZonesConfig {
         return false;
     }
 
-    /** Trova tutte le zone che contengono un punto. */
     public static List<Zone> findAt(RegistryKey<World> wk, int x, int y, int z) {
         List<Zone> out = new ArrayList<>();
         for (Zone z0 : ZONES.values()) if (z0.contains(x, y, z, wk)) out.add(z0);
         return out;
     }
 
-    /** Aggiunge uno spawn a una zona. */
     public static boolean addSpawn(UUID zoneId, SpawnEntry entry) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
         List<SpawnEntry> ns = new ArrayList<>(z.spawns()); ns.add(entry);
@@ -373,7 +375,6 @@ public class GrassZonesConfig {
         return true;
     }
 
-    /** Rimuove uno spawn per species id (case-insensitive). */
     public static boolean removeSpawn(UUID zoneId, String speciesId) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
         List<SpawnEntry> ns = new ArrayList<>();
@@ -389,21 +390,20 @@ public class GrassZonesConfig {
         return true;
     }
 
-    /** Imposta shiny odds (1 su N) per zona. -1 = default globale. */
-    public static boolean setZoneShinyOdds(UUID zoneId, int shinyOdds) {
+    /** Set per-zone shiny multiplier. */
+    public static boolean setZoneShinyMultiplier(UUID zoneId, double shinyMultiplier) {
         Zone z = ZONES.get(zoneId); if (z == null) return false;
-        Zone nz = z.withShinyOdds(shinyOdds);
+        Zone nz = z.withShinyMultiplier(shinyMultiplier);
         ZONES.put(zoneId, nz);
         try {
             File f = writeZoneFile(nz);
             FILE_BY_ID.put(zoneId, f);
         } catch (IOException e) {
-            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Write error on setZoneShinyOdds {}: {}", zoneId, e.getMessage(), e);
+            CobblemonMapKitMod.LOGGER.error("[GrassZonesConfig] Write error on setZoneShinyMultiplier {}: {}", zoneId, e.getMessage(), e);
         }
         return true;
     }
 
-    /** Rinomina la zona e rinomina il file su disco. */
     public static boolean setZoneName(UUID zoneId, String newName) {
         if (newName == null || newName.isBlank()) return false;
         Zone z = ZONES.get(zoneId); if (z == null) return false;
@@ -485,7 +485,6 @@ public class GrassZonesConfig {
         };
     }
 
-    /** Gestisce il risultato di mkdirs(), evitando warning e segnalando eventuali problemi. */
     private static void ensureDir() {
         File parent = ZONES_DIR.getParentFile();
         if (parent != null && !parent.exists()) {
@@ -536,7 +535,6 @@ public class GrassZonesConfig {
         return false;
     }
 
-    /** Trova un filename unico per il nome desiderato, con suffissi " (2)", " (3)" se necessario. */
     private static File uniqueFileForName(String desiredName, UUID ownerId) {
         String base = sanitizeForFilename(desiredName);
         File f = new File(ZONES_DIR, base + ".json");
@@ -550,7 +548,6 @@ public class GrassZonesConfig {
         }
     }
 
-    /** Ritorna true se il file esiste ed è associato ad un id diverso (o non leggibile ma presente). */
     private static boolean existsDifferentOwner(File f, UUID ownerId) {
         if (!f.exists()) return false;
         try {
@@ -561,7 +558,6 @@ public class GrassZonesConfig {
         }
     }
 
-    /** Scrive su disco la zona, scegliendo/aggiornando il filename in base al nome. */
     private static File writeZoneFile(Zone z) throws IOException {
         ensureDir();
 
@@ -610,7 +606,12 @@ public class GrassZonesConfig {
         zd.minY = z.minY(); zd.maxY = z.maxY();
         zd.y = null;
         zd.timeCreated = z.timeCreated();
-        zd.shinyOdds = (z.shinyOdds() <= 0) ? -1 : z.shinyOdds();
+
+        // NEW: always write ShinyMultiplier exactly
+        zd.shinyMultiplier = z.shinyMultiplier();
+
+        // legacy field not written anymore
+        zd.shinyOdds = null;
 
         zd.spawns = new ArrayList<>();
         for (SpawnEntry se : z.spawns()) {
@@ -622,7 +623,6 @@ public class GrassZonesConfig {
             sd.time = se.time.name().toLowerCase(Locale.ROOT);
             if (se.aspect != null && !se.aspect.isBlank()) sd.aspect = se.aspect;
 
-            // IMPORTANT: always write medium, default "both"
             MediumBand m = (se.medium == null) ? MediumBand.BOTH : se.medium;
             sd.medium = m.name().toLowerCase(Locale.ROOT);
 
@@ -661,17 +661,27 @@ public class GrassZonesConfig {
                 }
 
                 TimeBand tb = parseTime(sd.time);
-                MediumBand mb = parseMedium(sd.medium); // default BOTH if missing
+                MediumBand mb = parseMedium(sd.medium);
 
-                spawns.add(new SpawnEntry(
-                        sd.species, sd.minLevel, sd.maxLevel, sd.weight, tb, sd.aspect, mb
-                ));
+                spawns.add(new SpawnEntry(sd.species, sd.minLevel, sd.maxLevel, sd.weight, tb, sd.aspect, mb));
             }
         }
+
         long t = zd.timeCreated == 0 ? Instant.now().toEpochMilli() : zd.timeCreated;
-        int shinyOdds = (zd.shinyOdds == null || zd.shinyOdds <= 0) ? -1 : zd.shinyOdds;
         String name = (zd.name == null || zd.name.isBlank()) ? ("Zone " + shortId(id)) : zd.name;
-        return new Zone(id, name, wk, zd.minX, zd.minZ, zd.maxX, zd.maxZ, minY, maxY, t, spawns, shinyOdds);
+
+        // NEW multiplier:
+        double mult = 1.0;
+        if (zd.shinyMultiplier != null) {
+            mult = zd.shinyMultiplier;
+        } else if (zd.shinyOdds != null && zd.shinyOdds > 0) {
+            // legacy convert: multiplier = 8192 / shinyOdds
+            mult = LEGACY_BASE_ODDS_FOR_CONVERSION / (double) zd.shinyOdds;
+        }
+
+        if (Double.isNaN(mult) || Double.isInfinite(mult) || mult <= 0) mult = 1.0;
+
+        return new Zone(id, name, wk, zd.minX, zd.minZ, zd.maxX, zd.maxZ, minY, maxY, t, spawns, mult);
     }
 
     private static Zone readZoneFile(File f) throws IOException {
