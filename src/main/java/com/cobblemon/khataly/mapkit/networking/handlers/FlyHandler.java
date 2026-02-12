@@ -1,6 +1,7 @@
 package com.cobblemon.khataly.mapkit.networking.handlers;
 
 import com.cobblemon.khataly.mapkit.networking.packet.fly.FlyPacketC2S;
+import com.cobblemon.khataly.mapkit.networking.util.NetUtil;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -27,7 +28,7 @@ public final class FlyHandler {
 
         Identifier worldId = packet.worldKeyId();
         BlockPos pos = packet.pos();
-        if (pos == null) return;
+        if (worldId == null || pos == null) return;
 
         RegistryKey<net.minecraft.world.World> targetKey =
                 RegistryKey.of(RegistryKeys.WORLD, worldId);
@@ -37,6 +38,10 @@ public final class FlyHandler {
             player.sendMessage(Text.literal("That destination no longer exists: " + worldId), false);
             return;
         }
+
+        // ✅ HM animation: use the same packet pipeline as other HMs (Teleport etc.)
+        // This picks the player’s Pokémon that has the move "fly" (like your other HMs do).
+        NetUtil.sendAnimation(player, "fly");
 
         // force-load destination chunk
         targetWorld.getChunk(pos);

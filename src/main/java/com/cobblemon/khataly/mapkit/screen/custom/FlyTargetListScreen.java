@@ -13,27 +13,27 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.List;
+import java.util.UUID;
 
 public class FlyTargetListScreen extends Screen {
 
+    private final UUID pokemonId;
     private final List<FlyMenuS2CPacket.FlyTargetEntry> targets;
 
-    // --- Scroll state ---
     private int scrollOffset = 0;
     private int maxScroll = 0;
 
-    // --- Layout ---
     private static final int FIRST_Y = 40;
     private static final int ROW_SPACING = 25;
     private static final int BUTTON_H = 20;
     private static final int SCROLL_STEP = 12;
 
-    // area lista
     private final int listTop = 36;
     private int listBottom = 0;
 
-    public FlyTargetListScreen(MutableText title, List<FlyMenuS2CPacket.FlyTargetEntry> targets) {
+    public FlyTargetListScreen(MutableText title, UUID pokemonId, List<FlyMenuS2CPacket.FlyTargetEntry> targets) {
         super(title);
+        this.pokemonId = pokemonId;
         this.targets = targets;
     }
 
@@ -42,42 +42,32 @@ public class FlyTargetListScreen extends Screen {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        // Area scrollabile: dall'inizio lista fino sopra il bottone Close
         this.listBottom = this.height - 52;
         int viewportHeight = this.listBottom - this.listTop;
 
-        // Calcola max scroll in base a contenuto e viewport
         int contentHeight = targets.size() * ROW_SPACING;
         this.maxScroll = Math.max(0, contentHeight - viewportHeight);
-        if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
-        if (this.scrollOffset < 0) this.scrollOffset = 0;
+        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScroll));
 
-        // Disegna solo le righe visibili
         int y = FIRST_Y - scrollOffset;
 
         for (FlyMenuS2CPacket.FlyTargetEntry entry : targets) {
-            if (y + BUTTON_H < listTop) { // sopra la viewport
-                y += ROW_SPACING;
-                continue;
-            }
-            if (y > listBottom) { // sotto la viewport
-                break;
-            }
+            if (y + BUTTON_H < listTop) { y += ROW_SPACING; continue; }
+            if (y > listBottom) break;
 
             String name = entry.name();
             BlockPos pos = entry.pos();
-            String dimShort = shortDim(entry.worldKey());
 
             this.addDrawableChild(new SimpleButton(
                     this.width / 2 - 100,
                     y,
                     200,
                     BUTTON_H,
-                    Text.literal(name + " [" + dimShort + "] @ " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()),
+                    Text.literal(name), // ✅ name only (no coords/dim)
                     button -> {
                         Identifier worldId = Identifier.tryParse(entry.worldKey());
                         if (worldId != null) {
-                            ClientPlayNetworking.send(new FlyPacketC2S(worldId, pos));
+                            ClientPlayNetworking.send(new FlyPacketC2S(pokemonId, worldId, pos));
                         }
                         MinecraftClient.getInstance().setScreen(null);
                     }
@@ -86,7 +76,6 @@ public class FlyTargetListScreen extends Screen {
             y += ROW_SPACING;
         }
 
-        // Bottone chiudi (sempre fisso)
         this.addDrawableChild(new SimpleButton(
                 this.width / 2 - 100,
                 this.height - 40,
@@ -97,32 +86,19 @@ public class FlyTargetListScreen extends Screen {
         ));
     }
 
-    private static String shortDim(String worldKey) {
-        if (worldKey == null) return "?";
-        int idx = worldKey.indexOf(':');
-        return (idx >= 0 && idx + 1 < worldKey.length()) ? worldKey.substring(idx + 1) : worldKey;
-    }
-
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        // scroll solo dentro l'area lista
         if (mouseY < this.listTop || mouseY > this.listBottom) {
             return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
         }
-
-        if (this.maxScroll <= 0) {
-            return true;
-        }
+        if (this.maxScroll <= 0) return true;
 
         this.scrollOffset -= (int) (verticalAmount * SCROLL_STEP);
-
-        if (this.scrollOffset < 0) this.scrollOffset = 0;
-        if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
+        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScroll));
 
         MinecraftClient client = MinecraftClient.getInstance();
         this.clearChildren();
         this.init(client, this.width, this.height);
-
         return true;
     }
 

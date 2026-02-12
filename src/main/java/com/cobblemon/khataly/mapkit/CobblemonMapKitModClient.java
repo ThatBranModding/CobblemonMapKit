@@ -12,12 +12,14 @@ import com.cobblemon.khataly.mapkit.event.client.ClientEventHandler;
 import com.cobblemon.khataly.mapkit.item.ModItems;
 import com.cobblemon.khataly.mapkit.networking.handlers.BadgeBoxClientHandler;
 import com.cobblemon.khataly.mapkit.networking.handlers.CurioCaseClientHandler;
+import com.cobblemon.khataly.mapkit.networking.packet.AnimationHMPacketS2C;
 import com.cobblemon.khataly.mapkit.networking.packet.RotatePlayerS2CPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.bike.ToggleBikeGearC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.packet.bike.BikeWheelieC2SPacket;
 import com.cobblemon.khataly.mapkit.networking.util.ClientAnimationState;
 import com.cobblemon.khataly.mapkit.networking.util.GrassNetworkingInit;
 import com.cobblemon.khataly.mapkit.screen.ModScreenHandlers;
+import com.cobblemon.khataly.mapkit.screen.custom.AnimationMoveScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.CutScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.RockClimbScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.RockSmashScreen;
@@ -32,6 +34,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
 
 public class CobblemonMapKitModClient implements ClientModInitializer {
 
@@ -73,6 +77,25 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
         CurioCaseClientHandler.register();
 
         GrassNetworkingInit.registerReceivers();
+
+        // ✅ HM animation packet receiver (plays fly SFX + opens animation screen)
+        ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, ctx) -> {
+            ctx.client().execute(() -> {
+                var client = ctx.client();
+                if (client.player != null) {
+                    // Fly sound when HM screen appears
+                    client.player.playSound(
+                            net.minecraft.sound.SoundEvent.of(
+                                    net.minecraft.util.Identifier.of("mapkit", "fly")
+                            ),
+                            1.0f,
+                            1.0f
+                    );
+
+                }
+                client.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon()));
+            });
+        });
 
         ClientPlayNetworking.registerGlobalReceiver(RotatePlayerS2CPacket.ID, (payload, ctx) -> {
             float total = payload.totalRotation();

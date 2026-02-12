@@ -19,6 +19,12 @@ public class PlayerFlyProgress {
     /** Cache in memoria: UUID -> set di nomi target (lowercase) sbloccati */
     private static final Map<UUID, Set<String>> cache = new HashMap<>();
 
+    /** Canonical form used everywhere for IDs and comparisons. */
+    public static String canon(String anyName) {
+        if (anyName == null) return "";
+        return anyName.trim().toLowerCase(Locale.ROOT);
+    }
+
     // ===================== API =====================
 
     /** Restituisce un set NON modificabile dei target sbloccati. */
@@ -30,17 +36,22 @@ public class PlayerFlyProgress {
     /** True se il target (key lowercase) è sbloccato per il player. */
     public static boolean isUnlocked(UUID uuid, String keyLower) {
         ensureLoaded(uuid);
-        return cache.getOrDefault(uuid, Collections.emptySet()).contains(keyLower);
+        String k = canon(keyLower);
+        if (k.isEmpty()) return false;
+        return cache.getOrDefault(uuid, Collections.emptySet()).contains(k);
     }
 
     /** Sblocca un target. Ritorna true se è stato aggiunto (nuovo), false se era già presente. */
     public static boolean unlock(UUID uuid, String keyLower) {
         ensureLoaded(uuid);
         Set<String> set = cache.computeIfAbsent(uuid, u -> new HashSet<>());
-        boolean added = set.add(keyLower);
+        String k = canon(keyLower);
+        if (k.isEmpty()) return false;
+        boolean added = set.add(k);
         if (added) save(uuid); // salvataggio immediato
         return added;
     }
+
     public static void clearAll(java.util.UUID uuid) {
         cache.put(uuid, new java.util.HashSet<>());
         save(uuid);
@@ -51,7 +62,13 @@ public class PlayerFlyProgress {
         ensureLoaded(uuid);
         if (keysLower == null || keysLower.isEmpty()) return;
         Set<String> set = cache.computeIfAbsent(uuid, u -> new HashSet<>());
-        if (set.addAll(keysLower)) save(uuid);
+
+        boolean changed = false;
+        for (String k : keysLower) {
+            String c = canon(k);
+            if (!c.isEmpty()) changed |= set.add(c);
+        }
+        if (changed) save(uuid);
     }
 
     // ================== LOAD/SAVE ==================
@@ -85,7 +102,10 @@ public class PlayerFlyProgress {
                 } else {
                     // normalizza lowercase
                     Set<String> s = new HashSet<>();
-                    for (String k : d.unlocked) if (k != null) s.add(k.toLowerCase(Locale.ROOT));
+                    for (String k : d.unlocked) {
+                        String c = canon(k);
+                        if (!c.isEmpty()) s.add(c);
+                    }
                     cache.put(uuid, s);
                 }
             }

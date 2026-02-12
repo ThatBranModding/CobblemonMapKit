@@ -24,8 +24,11 @@ public class ServerFlyHandler {
             var unlockedKeys = PlayerFlyProgress.getUnlocked(player.getUuid());
             Map<String, FlyTargetConfig.TargetInfo> visible = new HashMap<>();
             for (var e : all.entrySet()) {
-                if (unlockedKeys.contains(e.getKey())) {
-                    visible.put(e.getKey(), e.getValue());
+                String displayName = e.getKey();
+                String id = PlayerFlyProgress.canon(displayName);
+                if (!id.isEmpty() && unlockedKeys.contains(id)) {
+                    // Map key is the display name sent to the client
+                    visible.put(displayName, e.getValue());
                 }
             }
 

@@ -45,14 +45,16 @@ public class FlyTargetProximityWatcher {
             BlockPos playerPos = player.getBlockPos();
 
             for (Map.Entry<String, FlyTargetConfig.TargetInfo> e : catalog.entrySet()) {
-                String key = e.getKey(); // lowercase
+                String key = e.getKey();
+                String id = PlayerFlyProgress.canon(key);
                 FlyTargetConfig.TargetInfo info = e.getValue();
 
                 // stessa dimensione?
                 if (!playerWorld.getRegistryKey().equals(info.worldKey)) continue;
 
                 // già sbloccato?
-                if (PlayerFlyProgress.isUnlocked(player.getUuid(), key)) continue;
+                if (id.isEmpty()) continue;
+                if (PlayerFlyProgress.isUnlocked(player.getUuid(), id)) continue;
 
                 // distanza
                 BlockPos tPos = info.pos;
@@ -62,8 +64,9 @@ public class FlyTargetProximityWatcher {
                 int distSq = dx * dx + dy * dy + dz * dz;
 
                 if (distSq <= UNLOCK_RADIUS_SQ) {
-                    boolean added = PlayerFlyProgress.unlock(player.getUuid(), key);
+                    boolean added = PlayerFlyProgress.unlock(player.getUuid(), id);
                     if (added) {
+                        // Show the *display* name, not the internal canonical id
                         sendUnlockTitle(player, prettifyKey(key));
                     }
                 }
@@ -71,18 +74,11 @@ public class FlyTargetProximityWatcher {
         }
     }
 
-
     private static void sendUnlockTitle(ServerPlayerEntity player, String targetName) {
-        // Titolo breve
-        player.networkHandler.sendPacket(
-                new TitleS2CPacket(Text.literal("Fly Target Unlocked!"))
-        );
-        // Nome del target come sottotitolo
+        player.networkHandler.sendPacket(new TitleS2CPacket(Text.literal("Fly Target Unlocked!")));
         player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.literal("Now you can fly to " + targetName)));
-        // Durata: 10 tick fade-in, 60 visibile, 10 fade-out
         player.networkHandler.sendPacket(new TitleFadeS2CPacket(10, 60, 10));
 
-        // 🔊 suono solo per questo player
         RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE);
         player.networkHandler.sendPacket(new PlaySoundS2CPacket(
                 entry,
@@ -93,9 +89,7 @@ public class FlyTargetProximityWatcher {
         ));
     }
 
-
     private static String prettifyKey(String keyLower) {
-        // "spawn_town" -> "Spawn Town"
         String[] parts = keyLower.replace('_', ' ').split("\\s+");
         StringBuilder sb = new StringBuilder();
         for (String p : parts) {
