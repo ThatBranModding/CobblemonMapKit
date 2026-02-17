@@ -20,9 +20,11 @@ public class FlyTargetListScreen extends Screen {
     private final UUID pokemonId;
     private final List<FlyMenuS2CPacket.FlyTargetEntry> targets;
 
+    // --- Scroll state ---
     private int scrollOffset = 0;
     private int maxScroll = 0;
 
+    // --- Layout ---
     private static final int FIRST_Y = 40;
     private static final int ROW_SPACING = 25;
     private static final int BUTTON_H = 20;
@@ -47,7 +49,8 @@ public class FlyTargetListScreen extends Screen {
 
         int contentHeight = targets.size() * ROW_SPACING;
         this.maxScroll = Math.max(0, contentHeight - viewportHeight);
-        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScroll));
+        if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
+        if (this.scrollOffset < 0) this.scrollOffset = 0;
 
         int y = FIRST_Y - scrollOffset;
 
@@ -63,7 +66,7 @@ public class FlyTargetListScreen extends Screen {
                     y,
                     200,
                     BUTTON_H,
-                    Text.literal(name), // ✅ name only (no coords/dim)
+                    Text.literal(name), // ✅ ONLY show the location name
                     button -> {
                         Identifier worldId = Identifier.tryParse(entry.worldKey());
                         if (worldId != null) {
@@ -91,14 +94,18 @@ public class FlyTargetListScreen extends Screen {
         if (mouseY < this.listTop || mouseY > this.listBottom) {
             return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
         }
+
         if (this.maxScroll <= 0) return true;
 
         this.scrollOffset -= (int) (verticalAmount * SCROLL_STEP);
-        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScroll));
+
+        if (this.scrollOffset < 0) this.scrollOffset = 0;
+        if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
 
         MinecraftClient client = MinecraftClient.getInstance();
         this.clearChildren();
         this.init(client, this.width, this.height);
+
         return true;
     }
 

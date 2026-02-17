@@ -11,11 +11,9 @@ import net.minecraft.util.math.BlockPos;
 import java.util.UUID;
 
 public record FlyPacketC2S(UUID pokemonId, Identifier worldKeyId, BlockPos pos) implements CustomPayload {
+    public static final Identifier ID_RAW = Identifier.of(CobblemonMapKitMod.MOD_ID, "fly_request");
+    public static final CustomPayload.Id<FlyPacketC2S> ID = new CustomPayload.Id<>(ID_RAW);
 
-    public static final CustomPayload.Id<FlyPacketC2S> ID =
-            new CustomPayload.Id<>(Identifier.of(CobblemonMapKitMod.MOD_ID, "fly_request"));
-
-    // ✅ Avoid ambiguous method ref by using lambdas
     private static final PacketCodec<RegistryByteBuf, UUID> UUID_CODEC =
             PacketCodec.of(
                     (uuid, buf) -> buf.writeUuid(uuid),
