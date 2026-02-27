@@ -66,6 +66,7 @@ public final class StrengthHandler {
 
         // Only play animation AND grant window if NOT in free-move window
         if (!fast) {
+            // ✅ IMPORTANT: this must send hmId = "strength" to the client packet
             NetUtil.sendAnimation(player, "strength");
             NetUtil.msg(player, "💥 you used Strength!");
 

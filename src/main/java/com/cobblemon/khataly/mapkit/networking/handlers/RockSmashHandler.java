@@ -5,12 +5,6 @@ import com.cobblemon.khataly.mapkit.networking.manager.RestoreManager;
 import com.cobblemon.khataly.mapkit.networking.packet.rocksmash.RockSmashPacketC2S;
 import com.cobblemon.khataly.mapkit.networking.util.NetUtil;
 import com.cobblemon.khataly.mapkit.sound.ModSounds;
-import com.cobblemon.mod.common.CobblemonEntities;
-import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
-import com.cobblemon.mod.common.battles.BattleBuilder;
-import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
-import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.cobblemon.mod.common.pokemon.Species;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -24,7 +18,6 @@ import org.slf4j.LoggerFactory;
 public final class RockSmashHandler {
     private RockSmashHandler() {}
     private static final Logger LOGGER = LoggerFactory.getLogger("RockSmashHandler");
-    private static final float ENCOUNTER_CHANCE = 0.25f;
 
     public static void register() {
         ServerPlayNetworking.registerGlobalReceiver(RockSmashPacketC2S.ID, (payload, ctx) -> {
@@ -54,34 +47,9 @@ public final class RockSmashHandler {
                 NetUtil.sendParticles(p, ParticleTypes.CLOUD, pos, 0.3f, 0.3f, 0.3f, 0.1f, 20);
                 LOGGER.info("Block Rock removed at {}, restore timer started", pos);
 
-                if (p.getWorld().random.nextFloat() < ENCOUNTER_CHANCE) {
-                    spawnWildPokemonAttack(p);
-                } else {
-                    NetUtil.sendAnimation(p, "rocksmash");
-                }
+                // No wild encounters from Rock Smash rocks:
+                NetUtil.sendAnimation(p, "rocksmash");
             });
         });
-    }
-
-    private static void spawnWildPokemonAttack(ServerPlayerEntity player) {
-        Species species = PokemonSpecies.getByName("geodude");
-        if (species == null) {
-            LOGGER.warn("Pokemon spec not found!");
-            return;
-        }
-
-        Pokemon pokemon = new Pokemon();
-        pokemon.setSpecies(species);
-        pokemon.setLevel(10);
-        pokemon.initializeMoveset(true);
-
-        PokemonEntity pokemonEntity = new PokemonEntity(player.getWorld(), pokemon, CobblemonEntities.POKEMON);
-        pokemonEntity.setPokemon(pokemon);
-
-        BlockPos spawnPos = player.getBlockPos().add(1, 0, 0);
-        pokemonEntity.refreshPositionAndAngles(spawnPos, 0, 0);
-        player.getWorld().spawnEntity(pokemonEntity);
-
-        BattleBuilder.INSTANCE.pve(player, pokemonEntity);
     }
 }

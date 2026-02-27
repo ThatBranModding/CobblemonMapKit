@@ -18,39 +18,35 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Server → Client packet carrying a RenderablePokemon for animation purposes.
+ * Server → Client packet carrying a RenderablePokemon + HM id.
  */
-public record AnimationHMPacketS2C(RenderablePokemon pokemon) implements CustomPayload {
+public record AnimationHMPacketS2C(RenderablePokemon pokemon, String hmId) implements CustomPayload {
 
-    // ATTENZIONE: lasciato invariato per compatibilità col protocollo esistente
     public static final Id<AnimationHMPacketS2C> ID =
             new Id<>(Identifier.of(CobblemonMapKitMod.MOD_ID, "animation_responce"));
 
     public static final PacketCodec<RegistryByteBuf, AnimationHMPacketS2C> CODEC =
             new PacketCodec<>() {
 
-                // Coerente tra encode/decode: Identifier <-> String
                 private final PacketCodec<ByteBuf, Identifier> speciesCodec =
                         PacketCodecs.string(32767).xmap(Identifier::tryParse, Identifier::toString);
 
                 private final PacketCodec<ByteBuf, Integer> sizeCodec = PacketCodecs.VAR_INT;
                 private final PacketCodec<ByteBuf, String> aspectCodec = PacketCodecs.STRING;
+                private final PacketCodec<ByteBuf, String> hmIdCodec = PacketCodecs.STRING;
 
                 @Override
                 public AnimationHMPacketS2C decode(RegistryByteBuf buf) {
-                    // 1) Species Identifier
                     Identifier speciesId = speciesCodec.decode(buf);
                     if (speciesId == null) {
                         throw new IllegalStateException("Missing species identifier");
                     }
 
-                    // 2) Decodifica Species tramite codec NBT (senza Apache)
                     NbtElement nbt = NbtString.of(speciesId.toString());
                     Species species = Species.getBY_IDENTIFIER_CODEC()
                             .parse(NbtOps.INSTANCE, nbt)
                             .getOrThrow(err -> new IllegalStateException("Failed to decode Species: " + err));
 
-                    // 3) Aspects
                     int size = sizeCodec.decode(buf);
                     if (size < 0) {
                         throw new IllegalStateException("Invalid aspects size: " + size);
@@ -61,20 +57,28 @@ public record AnimationHMPacketS2C(RenderablePokemon pokemon) implements CustomP
                         aspects.add(aspectCodec.decode(buf));
                     }
 
-                    return new AnimationHMPacketS2C(new RenderablePokemon(species, aspects, ItemStack.EMPTY));
+                    String hmId = hmIdCodec.decode(buf);
+                    if (hmId == null || hmId.isBlank()) hmId = "unknown";
+
+                    return new AnimationHMPacketS2C(
+                            new RenderablePokemon(species, aspects, ItemStack.EMPTY),
+                            hmId
+                    );
                 }
 
                 @Override
                 public void encode(RegistryByteBuf buf, AnimationHMPacketS2C packet) {
-                    // 1) Species Identifier
                     speciesCodec.encode(buf, packet.pokemon().getSpecies().getResourceIdentifier());
 
-                    // 2) Aspects
                     Set<String> aspects = packet.pokemon().getAspects();
                     sizeCodec.encode(buf, aspects.size());
                     for (String aspect : aspects) {
                         aspectCodec.encode(buf, aspect);
                     }
+
+                    String hmId = packet.hmId();
+                    if (hmId == null) hmId = "unknown";
+                    hmIdCodec.encode(buf, hmId);
                 }
             };
 

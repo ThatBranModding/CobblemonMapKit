@@ -40,7 +40,9 @@ public final class CutHandler {
                     return;
                 }
 
+                // ✅ hmId should be "cut"
                 NetUtil.sendAnimation(p, "cut");
+
                 NetUtil.msg(p, "💥 you used Cut!");
                 NetUtil.playPlayerSound(p, ModSounds.CUTTABLE_TREE);
 

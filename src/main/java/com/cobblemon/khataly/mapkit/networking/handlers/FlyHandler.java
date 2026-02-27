@@ -37,7 +37,6 @@ public final class FlyHandler {
     private static void handle(MinecraftServer server, ServerPlayerEntity player, FlyPacketC2S packet) {
         if (server == null || player == null || packet == null) return;
 
-        // ✅ Badge / required-item gate (fixes your error: pass the String item id, not RequiredItem)
         if (!PlayerUtils.hasRequiredItem(player, HMConfig.FLY.item)) {
             String msg = (HMConfig.FLY.message == null || HMConfig.FLY.message.isBlank())
                     ? "You can't use Fly yet."
@@ -51,7 +50,6 @@ public final class FlyHandler {
         BlockPos pos = packet.pos();
         if (worldId == null || pos == null) return;
 
-        // ✅ Validate the destination is a real registered target AND unlocked by this player
         String matchedKey = findTargetKeyByWorldAndPos(worldId, pos);
         if (matchedKey == null) {
             player.sendMessage(Text.literal("That destination no longer exists."), false);
@@ -71,16 +69,13 @@ public final class FlyHandler {
             return;
         }
 
-        // ✅ HM animation: send the pokemon used (the one that opened the wheel / packet)
         var renderable = findRenderableFromParty(player, pokemonId);
         if (renderable != null) {
-            ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderable));
+            ServerPlayNetworking.send(player, new AnimationHMPacketS2C(renderable, "fly"));
         }
 
-        // force-load destination chunk
         targetWorld.getChunk(pos);
 
-        // teleport cross-dimension
         player.teleport(
                 targetWorld,
                 pos.getX() + 0.5,

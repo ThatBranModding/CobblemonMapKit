@@ -10,7 +10,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 public final class UltraHoleHandler {
     private UltraHoleHandler() {}
@@ -34,7 +39,8 @@ public final class UltraHoleHandler {
                     return;
                 }
 
-                NetUtil.sendAnimation(p, known.get());
+                // ✅ IMPORTANT: send a stable HM id, not the move name
+                NetUtil.sendAnimation(p, "ultrahole");
 
                 BlockPos portalPos = p.getBlockPos().offset(p.getHorizontalFacing(), 5).up(1);
                 p.getWorld().setBlockState(portalPos, ModBlocks.ULTRAHOLE_PORTAL.getDefaultState());
@@ -46,9 +52,17 @@ public final class UltraHoleHandler {
 
                     if (currentDim.equals(targetDim)) {
                         BlockPos spawn = Objects.requireNonNull(p.getServer()).getOverworld().getSpawnPos();
-                        portal.setTarget("minecraft:overworld", spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
+                        portal.setTarget("minecraft:overworld",
+                                spawn.getX() + 0.5,
+                                spawn.getY(),
+                                spawn.getZ() + 0.5
+                        );
                     } else {
-                        portal.setTarget(targetDim, HMConfig.ULTRAHOLE_SETTINGS.x, HMConfig.ULTRAHOLE_SETTINGS.y, HMConfig.ULTRAHOLE_SETTINGS.z);
+                        portal.setTarget(targetDim,
+                                HMConfig.ULTRAHOLE_SETTINGS.x,
+                                HMConfig.ULTRAHOLE_SETTINGS.y,
+                                HMConfig.ULTRAHOLE_SETTINGS.z
+                        );
                     }
 
                     portal.setOnRemove(() -> activePortals.remove(p.getUuid()));

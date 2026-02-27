@@ -21,6 +21,7 @@ public final class TeleportHandler {
                 if (!NetUtil.requireMove(p, "teleport", "❌ No Pokémon in your party knows Teleport!")) return;
                 if (!NetUtil.requireItem(p, HMConfig.TELEPORT.item, HMConfig.TELEPORT.message)) return;
 
+                // ✅ HM id must be "teleport" (client uses this for sound selection now)
                 NetUtil.sendAnimation(p, "teleport");
 
                 BlockPos spawnPos = p.getSpawnPointPosition();
@@ -34,7 +35,12 @@ public final class TeleportHandler {
                     spawnPos = spawnWorld.getSpawnPos();
                 }
 
-                NetUtil.teleportTo(p, spawnWorld, spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
+                NetUtil.teleportTo(p, spawnWorld,
+                        spawnPos.getX() + 0.5,
+                        spawnPos.getY() + 1,
+                        spawnPos.getZ() + 0.5
+                );
+
                 NetUtil.playPlayerSound(p, ModSounds.TELEPORT);
                 NetUtil.msg(p, "✨ Teleported to your spawn point!");
             });

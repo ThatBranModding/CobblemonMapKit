@@ -24,9 +24,12 @@ public final class FlashHandler {
                     return;
                 }
 
+                // ✅ hmId should be "flash"
                 NetUtil.sendAnimation(p, "flash");
+
                 int ticks = HMConfig.FLASH_DURATION * 20;
                 p.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, ticks, 0, false, false));
+
                 NetUtil.playPlayerSound(p, ModSounds.FLASH);
                 NetUtil.msg(p, "✨ Flash activated! You can see clearly for " + HMConfig.FLASH_DURATION + " seconds.");
             });

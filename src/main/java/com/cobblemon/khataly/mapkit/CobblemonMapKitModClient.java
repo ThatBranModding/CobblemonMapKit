@@ -24,6 +24,7 @@ import com.cobblemon.khataly.mapkit.screen.custom.CutScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.RockClimbScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.RockSmashScreen;
 import com.cobblemon.khataly.mapkit.screen.custom.StrengthScreen;
+import com.cobblemon.khataly.mapkit.sound.ModSounds;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -34,7 +35,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 
 public class CobblemonMapKitModClient implements ClientModInitializer {
@@ -78,21 +78,18 @@ public class CobblemonMapKitModClient implements ClientModInitializer {
 
         GrassNetworkingInit.registerReceivers();
 
-        // ✅ HM animation packet receiver (plays fly SFX + opens animation screen)
+        // ✅ HM animation packet receiver (Fly sound ONLY for Fly)
         ClientPlayNetworking.registerGlobalReceiver(AnimationHMPacketS2C.ID, (payload, ctx) -> {
             ctx.client().execute(() -> {
                 var client = ctx.client();
                 if (client.player != null) {
-                    // Fly sound when HM screen appears
-                    client.player.playSound(
-                            net.minecraft.sound.SoundEvent.of(
-                                    net.minecraft.util.Identifier.of("mapkit", "fly")
-                            ),
-                            1.0f,
-                            1.0f
-                    );
 
+                    // ✅ Only play Fly sound when the packet says it's Fly
+                    if ("fly".equals(payload.hmId())) {
+                        client.player.playSound(ModSounds.FLY, 1.0f, 1.0f);
+                    }
                 }
+
                 client.setScreen(new AnimationMoveScreen(Text.literal("AnimationMoveScreen"), payload.pokemon()));
             });
         });

@@ -1,10 +1,10 @@
 package com.cobblemon.khataly.mapkit.networking.handlers;
 
 import com.cobblemon.khataly.mapkit.block.ModBlocks;
+import com.cobblemon.khataly.mapkit.config.HMConfig;
 import com.cobblemon.khataly.mapkit.networking.manager.ClimbManager;
 import com.cobblemon.khataly.mapkit.networking.packet.rockclimb.RockClimbPacketC2S;
 import com.cobblemon.khataly.mapkit.networking.util.NetUtil;
-import com.cobblemon.khataly.mapkit.config.HMConfig;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -27,7 +27,9 @@ public final class RockClimbHandler {
                     return;
                 }
 
+                // ✅ Ensure HM id is correct for client-side sound selection
                 NetUtil.sendAnimation(p, "rockclimb");
+
                 ClimbManager.get().start(p, startPos);
             });
         });
